@@ -1,7 +1,7 @@
 eraven
 =====
 
-An OTP library
+Erlang client for Sentry.
 
 Build
 -----
