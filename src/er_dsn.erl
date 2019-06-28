@@ -12,6 +12,8 @@
 -export_type([t/0]).
 
 -export([new/1]).
+-export([public_key/1, secret_key/1]).
+-export([api_url/1]).
 
 %%%===================================================================
 %%% API
@@ -20,7 +22,7 @@
 -spec new(DsnString :: string()) -> t().
 new(DsnString) ->
   case http_uri:parse(DsnString) of
-    {ok, {Scheme, UserInfo, Hostname, Port, "/" ++ ProjectIdString, _Qs}} ->
+    {ok, {Scheme, UserInfo, Hostname, Port, Path, _Qs}} ->
       {PublicKey, SecretKey} = parse_keys(UserInfo),
       #er_dsn{
          scheme     = Scheme,
@@ -28,11 +30,29 @@ new(DsnString) ->
          secret_key = SecretKey,
          hostname   = Hostname,
          port       = Port,
-         project_id = list_to_integer(ProjectIdString, 10)
+         project_id = parse_project_id(Path)
         };
     {error, _Reason} = Error ->
       Error
   end.
+
+-spec public_key(Dsn) -> PublicKey when
+    Dsn       :: t(),
+    PublicKey :: string().
+public_key(#er_dsn{public_key = PublicKey}) ->
+  PublicKey.
+
+-spec secret_key(Dsn) -> SecretKey when
+    Dsn       :: t(),
+    SecretKey :: string().
+secret_key(#er_dsn{secret_key = SecretKey}) ->
+  SecretKey.
+
+-spec api_url(Dsn) -> ProjectId when
+    Dsn       :: t(),
+    ProjectId :: string().
+api_url(#er_dsn{scheme = Scheme, hostname = HostName, port = Port, project_id = ProjectId}) ->
+  atom_to_list(Scheme) ++ "://" ++ HostName ++ ":" ++ integer_to_list(Port) ++ "/api/" ++ integer_to_list(ProjectId) ++ "/store/".
 
 %%%===================================================================
 %%% Internal functions
@@ -49,3 +69,10 @@ parse_keys(UserInfo) ->
     [PublicKey] ->
       {PublicKey, undefined}
   end.
+
+-spec parse_project_id(Path) -> ProjectId when
+    Path      :: string(),
+    ProjectId :: non_neg_integer().
+parse_project_id(Path) ->
+  ProjectIdString = string:strip(Path, both, $/),
+  list_to_integer(ProjectIdString).

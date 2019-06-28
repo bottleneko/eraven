@@ -10,9 +10,9 @@
 %%%===================================================================
 
 send_event(_Event, _Config) ->
-  {er_dsn, Scheme, PublicKey, SecretKey, HostName, Port, ProjectId} = er_dsn:new("http://9f293de25b2c4a74b09ae731ba6aac58@localhost:9000/1"),
-  Url = atom_to_list(Scheme) ++ "://" ++ HostName ++ ":" ++ integer_to_list(Port) ++ "/api/" ++ integer_to_list(ProjectId) ++ "/store/",
-  Headers = authorization_headers(PublicKey, SecretKey),
+  Dsn = er_dsn:new("http://9f293de25b2c4a74b09ae731ba6aac58@localhost:9000/1"),
+  Url = er_dsn:api_url(Dsn),
+  Headers = authorization_headers(er_dsn:public_key(Dsn), er_dsn:secret_key(Dsn)),
   Body = "{\"data\":\"test\"}",
   httpc:request(post, {Url, Headers, "application/json", Body}, [], []).
 
