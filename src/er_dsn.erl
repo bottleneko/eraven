@@ -52,7 +52,8 @@ secret_key(#er_dsn{secret_key = SecretKey}) ->
     Dsn       :: t(),
     ProjectId :: string().
 api_url(#er_dsn{scheme = Scheme, hostname = HostName, port = Port, project_id = ProjectId}) ->
-  atom_to_list(Scheme) ++ "://" ++ HostName ++ ":" ++ integer_to_list(Port) ++ "/api/" ++ integer_to_list(ProjectId) ++ "/store/".
+  Chars = io_lib:format("~p://~s:~B/api/~B/store/", [Scheme, HostName, Port, ProjectId]),
+  lists:flatten(Chars).
 
 %%%===================================================================
 %%% Internal functions
