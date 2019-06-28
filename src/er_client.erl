@@ -10,9 +10,9 @@
 %%%===================================================================
 
 send_event(_Event, _Config) ->
-  {er_dsn, Scheme, PublicKey, PrivateKey, HostName, Port, ProjectId} = er_dsn:new("http://9f293de25b2c4a74b09ae731ba6aac58@localhost:9000/1"),
+  {er_dsn, Scheme, PublicKey, SecretKey, HostName, Port, ProjectId} = er_dsn:new("http://9f293de25b2c4a74b09ae731ba6aac58@localhost:9000/1"),
   Url = atom_to_list(Scheme) ++ "://" ++ HostName ++ ":" ++ integer_to_list(Port) ++ "/api/" ++ integer_to_list(ProjectId) ++ "/store/",
-  Headers = authorization_headers(PublicKey, PrivateKey),
+  Headers = authorization_headers(PublicKey, SecretKey),
   Body = "{\"data\":\"test\"}",
   httpc:request(post, {Url, Headers, "application/json", Body}, [], []).
 
@@ -20,13 +20,13 @@ send_event(_Event, _Config) ->
 %%% Internal functions
 %%%===================================================================
 
--spec authorization_headers(PublicKey, PrivateKey) -> Headers when
-    PublicKey  :: string(),
-    PrivateKey :: string() | undefined,
-    Headers    :: [{Field, Value}],
-    Field      :: string(),
-    Value      :: string().
-authorization_headers(PublicKey, PrivateKey) ->
+-spec authorization_headers(PublicKey, SecretKey) -> Headers when
+    PublicKey :: string(),
+    SecretKey :: string() | undefined,
+    Headers   :: [{Field, Value}],
+    Field     :: string(),
+    Value     :: string().
+authorization_headers(PublicKey, SecretKey) ->
   Timestamp = erlang:system_time(second),
   Format =
     "Sentry"
@@ -34,17 +34,17 @@ authorization_headers(PublicKey, PrivateKey) ->
     " sentry_client=~s,"
     " sentry_timestamp=~B,"
     " sentry_key=~s" ++
-    maybe_secret(PrivateKey),
+    maybe_secret(SecretKey),
   XSentryAuth = io_lib:format(Format, [?SENTRY_VERSION, ?SENTRY_CLIENT, Timestamp, PublicKey]),
   [{"User-Agent", ?SENTRY_CLIENT},
    {"X-Sentry-Auth", lists:flatten(XSentryAuth)}
   ].
 
--spec maybe_secret(PrivateKey) -> Format when
-    PrivateKey :: string() | undefined,
-    Format     :: string().
-maybe_secret(undefined = _PrivateKey) ->
+-spec maybe_secret(SecretKey) -> Format when
+    SecretKey :: string() | undefined,
+    Format    :: string().
+maybe_secret(undefined = _SecretKey) ->
   "";
-maybe_secret(PrivateKey) ->
+maybe_secret(SecretKey) ->
   Format = ", sentry_secret=~s",
-  io_lib:format(Format, [PrivateKey]).
+  io_lib:format(Format, [SecretKey]).
