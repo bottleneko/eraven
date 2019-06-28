@@ -11,3 +11,8 @@ remove-sentry:
 	docker-compose down
 	docker volume rm sentry-data
 	docker volume rm sentry-postgres
+
+coverage:
+	rebar3 ct --cover
+	rebar3 eunit --cover
+	rebar3 cover -v
