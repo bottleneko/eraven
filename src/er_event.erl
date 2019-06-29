@@ -4,9 +4,11 @@
                    message                 :: binary(),
                    level                   :: emergency | alert | critical | error | warning | notice | info | debug, % https://tools.ietf.org/html/rfc5424
                    platform = <<"erlang">> :: binary(),
-%                   exception           :: binary(),
-                   stacktrace              :: term(),
-                   context                 :: term()
+                   exception               :: #{type => error | throw, value => Reason :: term()},
+                   stacktrace              :: term() | undefined,
+                   context                 :: term(),
+                   module                  :: atom() | undefined,
+                   line                    :: non_neg_integer() | undefined
 %                   modules             :: [atom()]
                   }).
 
@@ -14,35 +16,44 @@
 
 -export_type([t/0]).
 
--export([new/4]).
+-export([new/5, new/6]).
 -export([to_map/1]).
 
 %%%===================================================================
 %%% API
 %%%===================================================================
 
-new(Message, Level, Stacktrace, Context) ->
+new(Message, Level, Module, Line, Context) ->
   #er_event{
-     timestamp   = erlang:system_time(second),
-     message     = to_binary(Message),
-     level       = Level,
-     stacktrace  = Stacktrace,
-     context     = Context
+     timestamp = erlang:system_time(second),
+     message   = to_binary(Message),
+     level     = Level,
+     module    = Module,
+     line      = Line,
+     context   = Context
+   }.
+
+new(Message, Level, Type, Reason, Stacktrace, Context) ->
+  #er_event{
+     timestamp  = erlang:system_time(second),
+     message    = to_binary(Message),
+     level      = Level,
+     exception  = #{type => Type, value => iolist_to_binary(io_lib:write([Reason]))},
+     stacktrace = Stacktrace,
+     context    = Context
     }.
 
 to_map(Event) ->
-  Stacktrace = Event#er_event.stacktrace,
   Context = Event#er_event.context,
+  MaybeDataFromStacktrace = maybe_data_from_stacktrace(Event),
 
-  #{culprit     => culprit_from_stacktrace(Stacktrace),
+  MaybeDataFromStacktrace#{
     timestamp   => Event#er_event.timestamp,
     message     => Event#er_event.message,
     level       => Event#er_event.level,
     platform    => Event#er_event.platform,
-    stacktrace  => format_stacktrace(Stacktrace),
     server_name => er_context:server_name(Context),
     environment => er_context:environment(Context),
-%    exception   => #{type => <<"error">>, value => <<"test">>},
     release     => er_context:release(Context),
     request     => er_context:request(Context),
     extra       => er_context:extra(Context),
@@ -56,9 +67,16 @@ to_map(Event) ->
 %%% Sentry formatters
 %%%===================================================================
 
-culprit_from_stacktrace([StacktraceLine | _RestStacktrace] = _Stacktrace) ->
+maybe_data_from_stacktrace(#er_event{stacktrace = Stacktrace, module = Module, line = Line} = _Event) when Stacktrace =:= undefined; Stacktrace =:= []->
+  Formatted = io_lib:format("~p:~B", [Module, Line]),
+  #{culprit => iolist_to_binary(Formatted)};
+maybe_data_from_stacktrace(#er_event{stacktrace = [StacktraceLine | _RestStacktrace] = Stacktrace} = Event) ->
   {Module, Function, ArgsOrArity, _Location} = StacktraceLine,
-  format_mfa(Module, Function, arity_to_integer(ArgsOrArity)).
+  Culprit = format_mfa(Module, Function, arity_to_integer(ArgsOrArity)),
+  #{culprit     => Culprit,
+    exception   => Event#er_event.exception,
+    stacktrace  => format_stacktrace(Stacktrace)
+   }.
 
 format_stacktrace(Stacktrace) ->
   Map =

@@ -8,12 +8,7 @@
 %%%===================================================================
 
 log(_LogEvent, _Config) ->
-  try
-    throw(123)
-  catch
-    _:_:Stacktrace ->
-      Stacktrace
-  end.
+  io:format("HERE").
 
 filter_config(Config) ->
   Config.

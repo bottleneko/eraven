@@ -3,11 +3,21 @@
 -define(SENTRY_VERSION, 7).
 -define(SENTRY_CLIENT, "eraven/0.1.0").
 
--export([send_event/2]).
+-export([send_event/0, send_event/2]).
 
 %%%===================================================================
 %%% API
 %%%===================================================================
+
+send_event() ->
+  Dsn = er_dsn:new("http://9f293de25b2c4a74b09ae731ba6aac58@localhost:9000/1"),
+  Url = er_dsn:api_url(Dsn),
+  Headers = authorization_headers(er_dsn:public_key(Dsn), er_dsn:secret_key(Dsn)),
+  Context = er_context:new("test_server", "staging", <<"v0.1.0">>, #{}, #{test => 42}, #{username => test_user, ip_address => <<"8.8.8.8">>}, #{tag => 123}, [], [test, test1, test2]),
+  Event = er_event:new("Test\n42", error, test_module, 42, Context),
+  io:format("~p~n", [er_event:to_map(Event)]),
+  Body = jsx:encode(er_event:to_map(Event)),
+  httpc:request(post, {Url, Headers, "application/json", Body}, [], []).
 
 send_event(_Event, _Config) ->
   Dsn = er_dsn:new("http://9f293de25b2c4a74b09ae731ba6aac58@localhost:9000/1"),
@@ -17,7 +27,7 @@ send_event(_Event, _Config) ->
   Stacktrace =
     [{er_logger_handler,log,2,[{file,"eraven/src/er_logger_handler.erl"}, {line,12}]},
      {erl_eval,do_apply,6,[{file,"erl_eval.erl"},{line,684}]}],
-  Event = er_event:new("Test", error, Stacktrace, Context),
+  Event = er_event:new("Test", error, throw, {error, some_error}, Stacktrace, Context),
   io:format("~p~n", [er_event:to_map(Event)]),
   Body = jsx:encode(er_event:to_map(Event)),
   httpc:request(post, {Url, Headers, "application/json", Body}, [], []).
