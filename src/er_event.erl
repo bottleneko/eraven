@@ -3,16 +3,16 @@
 -record(er_event, {
 %                   id                  :: non_neg_integer(),
 %                   culprit             :: term(),
-                   timestamp           :: non_neg_integer(),
-                   message             :: binary(),
+                   timestamp                :: non_neg_integer(),
+                   message                 :: binary(),
 %                   tags                :: map(),
-                   level               :: emergency | alert | critical | error | warning | notice | info | debug, % https://tools.ietf.org/html/rfc5424
-                   platform = "erlang" :: string(),
+                   level                   :: emergency | alert | critical | error | warning | notice | info | debug, % https://tools.ietf.org/html/rfc5424
+                   platform = <<"erlang">> :: binary(),
 %                   server_name         :: binary(),
 %                   environment         :: binary(),
 %                   exception           :: binary(),
 %                   release             :: binary(),
-                   stacktrace          :: term()
+                   stacktrace              :: term()
 %                   request             :: term(),
 %                   extra               :: term(),
 %                   user                :: term(),
@@ -35,7 +35,7 @@
 new(Message, Level, Stacktrace) ->
   #er_event{
      timestamp  = erlang:system_time(second),
-     message    = Message,
+     message    = to_binary(Message),
      level      = Level,
      stacktrace = Stacktrace
     }.
@@ -43,7 +43,7 @@ new(Message, Level, Stacktrace) ->
 to_map(Event) ->
   #{timestamp  => Event#er_event.timestamp,
     message    => Event#er_event.message,
-    level      => atom_to_list(Event#er_event.level),
+    level      => atom_to_binary(Event#er_event.level, utf8),
     platform   => Event#er_event.platform,
     stacktrace => format_stacktrace(Event#er_event.stacktrace)
    }.
@@ -52,12 +52,17 @@ to_map(Event) ->
 %%% Internal functions
 %%%===================================================================
 
+to_binary(Binary) when is_binary(Binary) ->
+  Binary;
+to_binary(String) when is_list(String) ->
+  list_to_binary(String).
+
 format_stacktrace(Stacktrace) ->
   Map =
     fun({Module, Function, ArgsOrArity, Location}) ->
         Arity = arity_to_integer(ArgsOrArity),
 
-        #{filename => proplists:get_value(file, Location),
+        #{filename => to_binary(proplists:get_value(file, Location)),
           function => format_mfa(Module, Function, Arity),
           module   => Module,
           lineno   => proplists:get_value(line, Location),
@@ -78,7 +83,7 @@ parse_args(Args) when is_list(Args) ->
   Enumerated = lists:zip(Indexes, Args),
   Map =
     fun({Index, Arg}) ->
-        Key = io_lib:format("arg#~B", [Index]),
+        Key = iolist_to_binary(io_lib:format("arg#~B", [Index])),
         {Key, Arg}
     end,
   lists:map(Map, Enumerated);
@@ -98,7 +103,7 @@ arity_to_integer(Args) ->
     Module    :: atom(),
     Function  :: atom(),
     Arity     :: non_neg_integer(),
-    Formatted :: string().
+    Formatted :: binary().
 format_mfa(Module, Function, Arity) ->
-  Formatted = io_lib:format("~p:~p/~B", [Module, Function, Arity]),
-  lists:flatten(Formatted).
+  Formatted = io_lib:format(<<"~p:~p/~B">>, [Module, Function, Arity]),
+  iolist_to_binary(Formatted).
