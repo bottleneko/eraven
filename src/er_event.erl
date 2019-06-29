@@ -2,8 +2,7 @@
 
 -record(er_event, {
 %                   id                  :: non_neg_integer(),
-%                   culprit             :: term(),
-                   timestamp                :: non_neg_integer(),
+                   timestamp               :: non_neg_integer(),
                    message                 :: binary(),
 %                   tags                :: map(),
                    level                   :: emergency | alert | critical | error | warning | notice | info | debug, % https://tools.ietf.org/html/rfc5424
@@ -41,7 +40,8 @@ new(Message, Level, Stacktrace) ->
     }.
 
 to_map(Event) ->
-  #{timestamp  => Event#er_event.timestamp,
+  #{culprit    => culprit_from_stacktrace(Event#er_event.stacktrace),
+    timestamp  => Event#er_event.timestamp,
     message    => Event#er_event.message,
     level      => atom_to_binary(Event#er_event.level, utf8),
     platform   => Event#er_event.platform,
@@ -49,13 +49,12 @@ to_map(Event) ->
    }.
 
 %%%===================================================================
-%%% Internal functions
+%%% Sentry formatters
 %%%===================================================================
 
-to_binary(Binary) when is_binary(Binary) ->
-  Binary;
-to_binary(String) when is_list(String) ->
-  list_to_binary(String).
+culprit_from_stacktrace([StacktraceLine | _RestStacktrace] = _Stacktrace) ->
+  {Module, Function, ArgsOrArity, _Location} = StacktraceLine,
+  format_mfa(Module, Function, arity_to_integer(ArgsOrArity)).
 
 format_stacktrace(Stacktrace) ->
   Map =
@@ -70,6 +69,15 @@ format_stacktrace(Stacktrace) ->
          }
     end,
   #{frames => lists:map(Map, Stacktrace)}.
+
+%%%===================================================================
+%%% Internal functions
+%%%===================================================================
+
+to_binary(Binary) when is_binary(Binary) ->
+  Binary;
+to_binary(String) when is_list(String) ->
+  list_to_binary(String).
 
 %% TODO: add limits
 -spec parse_args(ArgsOrArity) -> Args when

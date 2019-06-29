@@ -14,6 +14,7 @@ to_map_test_() ->
   Level = <<"error">>,
   Message = <<"Message">>,
   Platform = <<"erlang">>,
+  Culprit = <<"er_logger_handler:log/2">>,
   HLoggerFilename = <<"eraven/src/er_logger_handler.erl">>,
   HLoggerFunction = <<"er_logger_handler:log/2">>,
   Args = [{<<"arg#0">>,"Test"},{<<"arg#1">>,42}],
@@ -21,6 +22,7 @@ to_map_test_() ->
                    function => <<"erl_eval:do_apply/6">>,
                    lineno => 684,module => erl_eval,vars => []},
   [?_assertMatch(#{level := Level,message := Message,platform := Platform,
+                   culprit := Culprit,
                    stacktrace :=
                      #{frames :=
                          [#{filename := HLoggerFilename,
@@ -29,6 +31,7 @@ to_map_test_() ->
                             vars := []},
                           ErlEvalFrame]}}, er_event:to_map(EventWithArity)),
    ?_assertMatch(#{level := Level,message := Message,platform := Platform,
+                   culprit := Culprit,
                    stacktrace :=
                      #{frames :=
                          [#{filename := HLoggerFilename,
