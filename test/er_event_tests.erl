@@ -10,8 +10,9 @@ to_map_test_() ->
     [{er_logger_handler,log,["Test", 42],[{file,"eraven/src/er_logger_handler.erl"}, {line,12}]},
      {erl_eval,do_apply,6,[{file,"erl_eval.erl"},{line,684}]}],
   ServerName = <<"test_server">>,
-  EventWithArity = er_event:new("Message", error, ServerName, StacktraceWithArity),
-  EventWithArgs = er_event:new(<<"Message">>, error, ServerName, StacktraceWithArgs),
+  Environment = <<"staging">>,
+  EventWithArity = er_event:new("Message", error, ServerName, Environment, StacktraceWithArity),
+  EventWithArgs = er_event:new(<<"Message">>, error, ServerName, Environment, StacktraceWithArgs),
   Level = <<"error">>,
   Message = <<"Message">>,
   Platform = <<"erlang">>,
@@ -23,7 +24,7 @@ to_map_test_() ->
                    function => <<"erl_eval:do_apply/6">>,
                    lineno => 684,module => erl_eval,vars => []},
   [?_assertMatch(#{level := Level,message := Message,platform := Platform,
-                   culprit := Culprit, server_name := ServerName,
+                   culprit := Culprit, server_name := ServerName, environment := Environment,
                    stacktrace :=
                      #{frames :=
                          [#{filename := HLoggerFilename,
@@ -32,7 +33,7 @@ to_map_test_() ->
                             vars := []},
                           ErlEvalFrame]}}, er_event:to_map(EventWithArity)),
    ?_assertMatch(#{level := Level,message := Message,platform := Platform,
-                   culprit := Culprit, server_name := ServerName,
+                   culprit := Culprit, server_name := ServerName, environment := Environment,
                    stacktrace :=
                      #{frames :=
                          [#{filename := HLoggerFilename,

@@ -8,7 +8,7 @@
                    level                   :: emergency | alert | critical | error | warning | notice | info | debug, % https://tools.ietf.org/html/rfc5424
                    platform = <<"erlang">> :: binary(),
                    server_name             :: binary(),
-%                   environment         :: binary(),
+                   environment             :: binary(),
 %                   exception           :: binary(),
 %                   release             :: binary(),
                    stacktrace              :: term()
@@ -24,19 +24,20 @@
 
 -export_type([t/0]).
 
--export([new/4]).
+-export([new/5]).
 -export([to_map/1]).
 
 %%%===================================================================
 %%% API
 %%%===================================================================
 
-new(Message, Level, ServerName, Stacktrace) ->
+new(Message, Level, ServerName, Environment, Stacktrace) ->
   #er_event{
      timestamp   = erlang:system_time(second),
      message     = to_binary(Message),
      level       = Level,
      server_name = to_binary(ServerName),
+     environment = to_binary(Environment),
      stacktrace  = Stacktrace
     }.
 
@@ -47,6 +48,7 @@ to_map(Event) ->
     level       => atom_to_binary(Event#er_event.level, utf8),
     platform    => Event#er_event.platform,
     server_name => Event#er_event.server_name,
+    environment => Event#er_event.environment,
     stacktrace  => format_stacktrace(Event#er_event.stacktrace)
    }.
 
