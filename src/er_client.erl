@@ -13,7 +13,11 @@ send_event(_Event, _Config) ->
   Dsn = er_dsn:new("http://9f293de25b2c4a74b09ae731ba6aac58@localhost:9000/1"),
   Url = er_dsn:api_url(Dsn),
   Headers = authorization_headers(er_dsn:public_key(Dsn), er_dsn:secret_key(Dsn)),
-  Body = io_lib:format("{\"stacktrace\":{\"frames\":[{\"module\":\"zxc\", \"lineno\": 42, \"in_app\": \"portal\", \"function\": \"test:test/1\", \"vars\":\"42\", \"filename\": \"test.erl\"}]}}", []),
+  Stacktrace =
+    [{er_logger_handler,log,2,[{file,"eraven/src/er_logger_handler.erl"}, {line,12}]},
+     {erl_eval,do_apply,6,[{file,"erl_eval.erl"},{line,684}]}],
+  Event = er_event:new("Test", error, Stacktrace),
+  Body = jsx:encode(er_event:to_map(Event)),
   io:format(Body),
   httpc:request(post, {Url, Headers, "application/json", Body}, [], []).
 
