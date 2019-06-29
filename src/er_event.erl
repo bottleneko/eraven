@@ -1,22 +1,12 @@
 -module(er_event).
 
--record(er_event, {
-%                   id                  :: non_neg_integer(),
-                   timestamp               :: non_neg_integer(),
+-record(er_event, {timestamp               :: non_neg_integer(),
                    message                 :: binary(),
-%                   tags                :: map(),
                    level                   :: emergency | alert | critical | error | warning | notice | info | debug, % https://tools.ietf.org/html/rfc5424
                    platform = <<"erlang">> :: binary(),
-                   server_name             :: binary(),
-                   environment             :: binary(),
 %                   exception           :: binary(),
-%                   release             :: binary(),
-                   stacktrace              :: term()
-%                   request             :: term(),
-%                   extra               :: term(),
-%                   user                :: term(),
-%                   breadcrumbs         :: term(),
-%                   fingerprint         :: term(),
+                   stacktrace              :: term(),
+                   context                 :: term()
 %                   modules             :: [atom()]
                   }).
 
@@ -24,32 +14,42 @@
 
 -export_type([t/0]).
 
--export([new/5]).
+-export([new/4]).
 -export([to_map/1]).
 
 %%%===================================================================
 %%% API
 %%%===================================================================
 
-new(Message, Level, ServerName, Environment, Stacktrace) ->
+new(Message, Level, Stacktrace, Context) ->
   #er_event{
      timestamp   = erlang:system_time(second),
      message     = to_binary(Message),
      level       = Level,
-     server_name = to_binary(ServerName),
-     environment = to_binary(Environment),
-     stacktrace  = Stacktrace
+     stacktrace  = Stacktrace,
+     context     = Context
     }.
 
 to_map(Event) ->
-  #{culprit     => culprit_from_stacktrace(Event#er_event.stacktrace),
+  Stacktrace = Event#er_event.stacktrace,
+  Context = Event#er_event.context,
+
+  #{culprit     => culprit_from_stacktrace(Stacktrace),
     timestamp   => Event#er_event.timestamp,
     message     => Event#er_event.message,
-    level       => atom_to_binary(Event#er_event.level, utf8),
+    level       => Event#er_event.level,
     platform    => Event#er_event.platform,
-    server_name => Event#er_event.server_name,
-    environment => Event#er_event.environment,
-    stacktrace  => format_stacktrace(Event#er_event.stacktrace)
+    stacktrace  => format_stacktrace(Stacktrace),
+    server_name => er_context:server_name(Context),
+    environment => er_context:environment(Context),
+%    exception   => #{type => <<"error">>, value => <<"test">>},
+    release     => er_context:release(Context),
+    request     => er_context:request(Context),
+    extra       => er_context:extra(Context),
+    user        => er_context:user(Context),
+    tags        => er_context:tags(Context),
+    breadcrumbs => er_context:breadcrumbs(Context),
+    fingerprint => er_context:fingerprint(Context)
    }.
 
 %%%===================================================================
