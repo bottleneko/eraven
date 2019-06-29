@@ -16,12 +16,20 @@
 
 -export_type([t/0]).
 
--export([new/5, new/6]).
+-export([new/3, new/5, new/6]).
 -export([to_map/1]).
 
 %%%===================================================================
 %%% API
 %%%===================================================================
+
+new(Message, Level, Context) ->
+  #er_event{
+     timestamp = erlang:system_time(second),
+     message   = to_binary(Message),
+     level     = Level,
+     context   = Context
+   }.
 
 new(Message, Level, Module, Line, Context) ->
   #er_event{
@@ -45,9 +53,10 @@ new(Message, Level, Type, Reason, Stacktrace, Context) ->
 
 to_map(Event) ->
   Context = Event#er_event.context,
-  MaybeDataFromStacktrace = maybe_data_from_stacktrace(Event),
 
-  MaybeDataFromStacktrace#{
+  OptionalData = format_optional_data(Event),
+
+  OptionalData#{
     timestamp   => Event#er_event.timestamp,
     message     => Event#er_event.message,
     level       => Event#er_event.level,
@@ -67,9 +76,13 @@ to_map(Event) ->
 %%% Sentry formatters
 %%%===================================================================
 
-maybe_data_from_stacktrace(#er_event{stacktrace = Stacktrace, module = Module, line = Line} = _Event) when Stacktrace =:= undefined; Stacktrace =:= []->
-  Formatted = io_lib:format("~p:~B", [Module, Line]),
-  #{culprit => iolist_to_binary(Formatted)};
+format_optional_data(Event) ->
+  MaybeDataFromStacktrace = maybe_data_from_stacktrace(Event),
+  MaybeCulpritFromLocation = maybe_culprit_from_location(Event),
+  maps:merge(MaybeDataFromStacktrace, MaybeCulpritFromLocation).
+
+maybe_data_from_stacktrace(#er_event{stacktrace = Stacktrace} = _Event) when Stacktrace =:= undefined; Stacktrace =:= [] ->
+  #{};
 maybe_data_from_stacktrace(#er_event{stacktrace = [StacktraceLine | _RestStacktrace] = Stacktrace} = Event) ->
   {Module, Function, ArgsOrArity, _Location} = StacktraceLine,
   Culprit = format_mfa(Module, Function, arity_to_integer(ArgsOrArity)),
@@ -77,6 +90,12 @@ maybe_data_from_stacktrace(#er_event{stacktrace = [StacktraceLine | _RestStacktr
     exception   => Event#er_event.exception,
     stacktrace  => format_stacktrace(Stacktrace)
    }.
+
+maybe_culprit_from_location(#er_event{module = Module, line = Line} = _Event) when Module =:= undefined; Line =:= undefined ->
+  #{};
+maybe_culprit_from_location(#er_event{module = Module, line = Line} = _Event) ->
+  Formatted = io_lib:format("~p:~B", [Module, Line]),
+  #{culprit => iolist_to_binary(Formatted)}.
 
 format_stacktrace(Stacktrace) ->
   Map =

@@ -9,6 +9,8 @@
   {env,[]},
   {modules, []},
 
+  {mod, {eraven, []}},
+
   {maintainers, ["Boris Murashov <bottleneko@gmail.com>"]},
   {licenses, ["MIT"]},
   {links, []}
