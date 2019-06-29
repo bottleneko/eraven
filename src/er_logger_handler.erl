@@ -8,7 +8,12 @@
 %%%===================================================================
 
 log(_LogEvent, _Config) ->
-  ok.
+  try
+    throw(123)
+  catch
+    _:_:Stacktrace ->
+      Stacktrace
+  end.
 
 filter_config(Config) ->
   Config.
