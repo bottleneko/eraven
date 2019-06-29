@@ -7,7 +7,7 @@
 %                   tags                :: map(),
                    level                   :: emergency | alert | critical | error | warning | notice | info | debug, % https://tools.ietf.org/html/rfc5424
                    platform = <<"erlang">> :: binary(),
-%                   server_name         :: binary(),
+                   server_name             :: binary(),
 %                   environment         :: binary(),
 %                   exception           :: binary(),
 %                   release             :: binary(),
@@ -24,28 +24,30 @@
 
 -export_type([t/0]).
 
--export([new/3]).
+-export([new/4]).
 -export([to_map/1]).
 
 %%%===================================================================
 %%% API
 %%%===================================================================
 
-new(Message, Level, Stacktrace) ->
+new(Message, Level, ServerName, Stacktrace) ->
   #er_event{
-     timestamp  = erlang:system_time(second),
-     message    = to_binary(Message),
-     level      = Level,
-     stacktrace = Stacktrace
+     timestamp   = erlang:system_time(second),
+     message     = to_binary(Message),
+     level       = Level,
+     server_name = to_binary(ServerName),
+     stacktrace  = Stacktrace
     }.
 
 to_map(Event) ->
-  #{culprit    => culprit_from_stacktrace(Event#er_event.stacktrace),
-    timestamp  => Event#er_event.timestamp,
-    message    => Event#er_event.message,
-    level      => atom_to_binary(Event#er_event.level, utf8),
-    platform   => Event#er_event.platform,
-    stacktrace => format_stacktrace(Event#er_event.stacktrace)
+  #{culprit     => culprit_from_stacktrace(Event#er_event.stacktrace),
+    timestamp   => Event#er_event.timestamp,
+    message     => Event#er_event.message,
+    level       => atom_to_binary(Event#er_event.level, utf8),
+    platform    => Event#er_event.platform,
+    server_name => Event#er_event.server_name,
+    stacktrace  => format_stacktrace(Event#er_event.stacktrace)
    }.
 
 %%%===================================================================

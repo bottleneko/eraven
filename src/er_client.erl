@@ -16,7 +16,7 @@ send_event(_Event, _Config) ->
   Stacktrace =
     [{er_logger_handler,log,2,[{file,"eraven/src/er_logger_handler.erl"}, {line,12}]},
      {erl_eval,do_apply,6,[{file,"erl_eval.erl"},{line,684}]}],
-  Event = er_event:new("Test", error, Stacktrace),
+  Event = er_event:new("Test", error, "test_server", Stacktrace),
   Body = jsx:encode(er_event:to_map(Event)),
   io:format(Body),
   httpc:request(post, {Url, Headers, "application/json", Body}, [], []).
