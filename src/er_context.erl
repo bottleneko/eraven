@@ -78,4 +78,6 @@ fingerprint(#er_context{fingerprint = Fingerprint}) ->
 to_binary(Binary) when is_binary(Binary) ->
   Binary;
 to_binary(String) when is_list(String) ->
-  list_to_binary(String).
+  list_to_binary(String);
+to_binary(Any) ->
+  Any.

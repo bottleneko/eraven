@@ -46,7 +46,7 @@ new(Message, Level, Type, Reason, Stacktrace, Context) ->
      timestamp  = erlang:system_time(second),
      message    = to_binary(Message),
      level      = Level,
-     exception  = #{type => Type, value => iolist_to_binary(io_lib:write([Reason]))},
+     exception  = #{type => Type, value => iolist_to_binary(io_lib:print(Reason))},
      stacktrace = Stacktrace,
      context    = Context
     }.

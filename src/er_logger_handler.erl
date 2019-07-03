@@ -7,10 +7,18 @@
 %%% Logger callbacks
 %%%===================================================================
 
-log(#{msg := Message, level := Level, meta := Meta} = LogEvent, #{dsn := Dsn} = Config) ->
+log(#{msg   := Message,
+      level := Level,
+      meta  := Meta} = LogEvent,
+    #{config := #{dsn                 := Dsn,
+                  environment_context := EnvironmentContext}} = Config) ->
   try
     io:format("HERE~nEVENT: ~p~nCONFIG: ~p~n", [LogEvent, Config]),
-    Context = er_context:new("server_name", "develop", "v0.1.0", #{}, #{}, #{}, #{}, [], []),
+    ServerName = er_environment_context:server_name(EnvironmentContext),
+    Environment = er_environment_context:environment(EnvironmentContext),
+    Release = er_environment_context:release(EnvironmentContext),
+    UserName = maps:get(username, Meta, <<"">>),
+    Context = er_context:new(ServerName, Environment, Release, #{}, #{}, #{username => UserName}, #{}, [], []),
     Event = build_event(format_message(Message), Level, Meta, Context),
     er_client:send_event(Event, Dsn)
   catch
@@ -23,8 +31,10 @@ log(LogEvent, Config) ->
 filter_config(Config) ->
   Config.
 
-changing_config(_SetOrUpdate, _OldConfig, NewConfig) ->
-  NewConfig.
+changing_config(update, OldConfig, NewConfig) ->
+  OldParams = maps:get(config, OldConfig, #{}),
+  NewParams = maps:get(config, NewConfig, #{}),
+  {ok, NewConfig#{config => maps:merge(OldParams, NewParams)}}.
 
 adding_handler(Config) ->
   {ok, Config}.
@@ -42,6 +52,9 @@ format_message({Format, Data}) ->
   Formatted = io_lib:format(Format, Data),
   iolist_to_binary(Formatted).
 
+build_event(Message, Level, #{type := Type, reason := Reason, stacktrace := Stacktrace} = _Meta, Context) ->
+  io:format(">>>>>>>>> ~p", [Reason]),
+  er_event:new(Message, Level, Type, Reason, Stacktrace, Context);
 build_event(Message, Level, #{mfa := {Module, _Function, _Arity}, line := Line} = _Meta, Context) ->
   er_event:new(Message, Level, Module, Line, Context);
 build_event(Message, Level, _Meta, Context) ->
