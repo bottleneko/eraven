@@ -17,8 +17,9 @@ log(#{msg   := Message,
     ServerName = er_environment_context:server_name(EnvironmentContext),
     Environment = er_environment_context:environment(EnvironmentContext),
     Release = er_environment_context:release(EnvironmentContext),
-    UserName = maps:get(username, Meta, <<"">>),
-    Context = er_context:new(ServerName, Environment, Release, #{}, #{}, #{username => UserName}, #{}, [], []),
+    UserContext = maps:get(user_context, Meta, undefined),
+    UserContextData = er_user_context:to_map(UserContext),
+    Context = er_context:new(ServerName, Environment, Release, #{}, #{}, UserContextData, #{}, [], []),
     Event = build_event(format_message(Message), Level, Meta, Context),
     er_client:send_event(Event, Dsn)
   catch
