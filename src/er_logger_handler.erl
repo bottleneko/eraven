@@ -11,7 +11,9 @@ log(#{msg   := Message,
       level := Level,
       meta  := Meta} = LogEvent,
     #{config := #{dsn                 := Dsn,
-                  environment_context := EnvironmentContext}} = Config) ->
+                  environment_context := EnvironmentContext
+                 },
+     event_tags_key := EventTagsKey} = Config) ->
   try
     io:format("HERE~nEVENT: ~p~nCONFIG: ~p~n", [LogEvent, Config]),
 
@@ -23,7 +25,7 @@ log(#{msg   := Message,
     UserContextData = er_user_context:to_map(UserContext),
 
     ProcessTags = maps:get(eraven_process_tags, Meta, #{}),
-    EventTags = maps:get(tags, Meta, #{}),
+    EventTags = maps:get(EventTagsKey, Meta, #{}),
     Tags = maps:merge(ProcessTags, EventTags),
 
     Context = er_context:new(ServerName, Environment, Release, #{}, #{}, UserContextData, Tags, [], []),

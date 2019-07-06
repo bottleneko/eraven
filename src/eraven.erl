@@ -11,7 +11,7 @@
 
 start(_, _) ->
   Dsn = er_dsn:new("http://9f293de25b2c4a74b09ae731ba6aac58@localhost:9000/1"),
-  logger:add_handler(eraven, er_logger_handler, #{config => #{dsn => Dsn}}),
+  logger:add_handler(eraven, er_logger_handler, #{config => #{dsn => Dsn}, event_tags_key => event_tags}),
   set_environment_context(eraven, <<"test_server">>, <<"develop">>, <<"v0.1.0">>),
   set_user_context(#{id => <<"test_id">>, username => <<"some_user">>, email => <<"user@example.com">>, ip_address => {8,8,8,8}}),
   set_process_tags(#{<<"test_process_tag2">> => tag}),
@@ -20,7 +20,7 @@ start(_, _) ->
   catch
     Type:Reason:Stacktrace ->
       %% Configure event tag key name
-      ?LOG_ERROR("Test ~p", [?LINE], #{type => Type, reason => Reason, stacktrace => Stacktrace, tags => #{test_event_tag => <<"tag2">>}})
+      ?LOG_ERROR("Test ~p", [?LINE], #{type => Type, reason => Reason, stacktrace => Stacktrace, event_tags => #{testTag => <<"testTag">>}})
   end,
   {ok, self()}.
 
