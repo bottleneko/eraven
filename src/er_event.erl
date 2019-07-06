@@ -2,7 +2,7 @@
 
 -record(er_event, {timestamp               :: non_neg_integer(),
                    message                 :: binary(),
-                   level                   :: emergency | alert | critical | error | warning | notice | info | debug, % https://tools.ietf.org/html/rfc5424
+                   level                   :: fatal | error | warning | info | debug,
                    platform = <<"erlang">> :: binary(),
                    exception               :: #{type => error | throw, value => Reason :: term()},
                    stacktrace              :: term() | undefined,
@@ -27,7 +27,7 @@ new(Message, Level, Context) ->
   #er_event{
      timestamp = erlang:system_time(second),
      message   = to_binary(Message),
-     level     = Level,
+     level     = map_event_level(Level),
      context   = Context
    }.
 
@@ -35,7 +35,7 @@ new(Message, Level, Module, Line, Context) ->
   #er_event{
      timestamp = erlang:system_time(second),
      message   = to_binary(Message),
-     level     = Level,
+     level     = map_event_level(Level),
      module    = Module,
      line      = Line,
      context   = Context
@@ -45,7 +45,7 @@ new(Message, Level, Type, Reason, Stacktrace, Context) ->
   #er_event{
      timestamp  = erlang:system_time(second),
      message    = to_binary(Message),
-     level      = Level,
+     level      = map_event_level(Level),
      exception  = #{type => Type, value => iolist_to_binary(io_lib:print(Reason))},
      stacktrace = Stacktrace,
      context    = Context
@@ -114,6 +114,20 @@ format_stacktrace(Stacktrace) ->
 %%%===================================================================
 %%% Internal functions
 %%%===================================================================
+
+%% https://tools.ietf.org/html/rfc5424
+-spec map_event_level(SyslogEventLevel) -> SentryEventLevel when
+    SyslogEventLevel :: atom(),
+    SentryEventLevel :: atom().
+map_event_level(emergency) -> fatal;
+map_event_level(alert)     -> fatal;
+map_event_level(critical)  -> fatal;
+map_event_level(error)     -> error;
+map_event_level(warning)   -> warning;
+map_event_level(notice)    -> warning;
+map_event_level(info)      -> info;
+map_event_level(debug)     -> debug.
+
 
 to_binary(Binary) when is_binary(Binary) ->
   Binary;
