@@ -12,11 +12,11 @@ to_map_test_() ->
   StacktraceWithArity =
     [{er_logger_handler,log,2,[{file,"eraven/src/er_logger_handler.erl"}, {line,12}]},
      {erl_eval,do_apply,6,[{file,"erl_eval.erl"},{line,684}]}],
-  EventWithArity = er_event:new(Message, Level, error, {error, some_error}, StacktraceWithArity, Context),
+  EventWithArity = er_event:new(Message, Level, error, {error, some_error}, StacktraceWithArity, Context, erlang:system_time(second)),
   StacktraceWithArgs =
     [{er_logger_handler,log,["Test", 42],[{file,"eraven/src/er_logger_handler.erl"}, {line,12}]},
      {erl_eval,do_apply,6,[{file,"erl_eval.erl"},{line,684}]}],
-  EventWithArgs = er_event:new(Message, Level, error, {error, some_error}, StacktraceWithArgs, Context),
+  EventWithArgs = er_event:new(Message, Level, error, {error, some_error}, StacktraceWithArgs, Context, erlang:system_time(second)),
   Platform = <<"erlang">>,
   Culprit = <<"er_logger_handler:log/2">>,
   HLoggerFilename = <<"eraven/src/er_logger_handler.erl">>,

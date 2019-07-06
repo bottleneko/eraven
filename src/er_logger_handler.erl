@@ -1,5 +1,7 @@
 -module(er_logger_handler).
 
+-define(MICROSECONDS_IN_SECONDS, 1000000).
+
 % Logger callbacks
 -export([log/2, filter_config/1, changing_config/3, adding_handler/1, removing_handler/1]).
 
@@ -62,10 +64,9 @@ format_message({Format, Data}) ->
   Formatted = io_lib:format(Format, Data),
   iolist_to_binary(Formatted).
 
-build_event(Message, Level, #{type := Type, reason := Reason, stacktrace := Stacktrace} = _Meta, Context) ->
-  io:format(">>>>>>>>> ~p", [Reason]),
-  er_event:new(Message, Level, Type, Reason, Stacktrace, Context);
-build_event(Message, Level, #{mfa := {Module, _Function, _Arity}, line := Line} = _Meta, Context) ->
-  er_event:new(Message, Level, Module, Line, Context);
-build_event(Message, Level, _Meta, Context) ->
-  er_event:new(Message, Level, Context).
+build_event(Message, Level, #{type := Type, reason := Reason, stacktrace := Stacktrace, time := Timestamp} = _Meta, Context) ->
+  er_event:new(Message, Level, Type, Reason, Stacktrace, Context, Timestamp div ?MICROSECONDS_IN_SECONDS);
+build_event(Message, Level, #{mfa := {Module, _Function, _Arity}, line := Line, time := Timestamp} = _Meta, Context) ->
+  er_event:new(Message, Level, Module, Line, Context, Timestamp div ?MICROSECONDS_IN_SECONDS);
+build_event(Message, Level, #{time := Timestamp} = _Meta, Context) ->
+  er_event:new(Message, Level, Context, Timestamp div ?MICROSECONDS_IN_SECONDS).

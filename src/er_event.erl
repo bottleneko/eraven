@@ -16,24 +16,24 @@
 
 -export_type([t/0]).
 
--export([new/3, new/5, new/6]).
+-export([new/4, new/6, new/7]).
 -export([to_map/1]).
 
 %%%===================================================================
 %%% API
 %%%===================================================================
 
-new(Message, Level, Context) ->
+new(Message, Level, Context, Timestamp) ->
   #er_event{
-     timestamp = erlang:system_time(second),
+     timestamp = Timestamp,
      message   = to_binary(Message),
      level     = map_event_level(Level),
      context   = Context
    }.
 
-new(Message, Level, Module, Line, Context) ->
+new(Message, Level, Module, Line, Context, Timestamp) ->
   #er_event{
-     timestamp = erlang:system_time(second),
+     timestamp = Timestamp,
      message   = to_binary(Message),
      level     = map_event_level(Level),
      module    = Module,
@@ -41,9 +41,9 @@ new(Message, Level, Module, Line, Context) ->
      context   = Context
    }.
 
-new(Message, Level, Type, Reason, Stacktrace, Context) ->
+new(Message, Level, Type, Reason, Stacktrace, Context, Timestamp) ->
   #er_event{
-     timestamp  = erlang:system_time(second),
+     timestamp  = Timestamp,
      message    = to_binary(Message),
      level      = map_event_level(Level),
      exception  = #{type => Type, value => iolist_to_binary(io_lib:print(Reason))},
@@ -127,7 +127,6 @@ map_event_level(warning)   -> warning;
 map_event_level(notice)    -> warning;
 map_event_level(info)      -> info;
 map_event_level(debug)     -> debug.
-
 
 to_binary(Binary) when is_binary(Binary) ->
   Binary;
