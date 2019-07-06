@@ -14,12 +14,19 @@ log(#{msg   := Message,
                   environment_context := EnvironmentContext}} = Config) ->
   try
     io:format("HERE~nEVENT: ~p~nCONFIG: ~p~n", [LogEvent, Config]),
+
     ServerName = er_environment_context:server_name(EnvironmentContext),
     Environment = er_environment_context:environment(EnvironmentContext),
     Release = er_environment_context:release(EnvironmentContext),
+
     UserContext = maps:get(user_context, Meta, undefined),
     UserContextData = er_user_context:to_map(UserContext),
-    Context = er_context:new(ServerName, Environment, Release, #{}, #{}, UserContextData, #{}, [], []),
+
+    ProcessTags = maps:get(eraven_process_tags, Meta, #{}),
+    EventTags = maps:get(tags, Meta, #{}),
+    Tags = maps:merge(ProcessTags, EventTags),
+
+    Context = er_context:new(ServerName, Environment, Release, #{}, #{}, UserContextData, Tags, [], []),
     Event = build_event(format_message(Message), Level, Meta, Context),
     er_client:send_event(Event, Dsn)
   catch
