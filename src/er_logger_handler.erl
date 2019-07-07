@@ -20,7 +20,7 @@ log(#{msg   := Message,
   try
     io:format("HERE~nEVENT: ~p~nCONFIG: ~p~n", [LogEvent, Config]),
 
-    UserContext = maps:get(user_context, Meta, undefined),
+    UserContext = maps:get(eraven_user_context, Meta, undefined),
     UserContextData = er_user_context:to_map(UserContext),
 
     ProcessTags = maps:get(eraven_process_tags, Meta, #{}),
