@@ -30,7 +30,9 @@ log(#{msg   := Message,
     EventTags = maps:get(EventTagsKey, Meta, #{}),
     Tags = maps:merge(ProcessTags, EventTags),
 
-    Context = er_context:new(ServerName, Environment, Release, #{}, #{}, UserContextData, Tags, [], []),
+    RequestContext = maps:get(eraven_request_context, Meta, undefined),
+
+    Context = er_context:new(ServerName, Environment, Release, RequestContext, #{}, UserContextData, Tags, [], []),
     Event = build_event(format_message(Message), Level, Meta, Context),
     er_client:send_event(Event, Dsn)
   catch

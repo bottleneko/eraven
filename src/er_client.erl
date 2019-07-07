@@ -15,6 +15,7 @@ send_event(Event, Dsn) ->
   Headers = authorization_headers(er_dsn:public_key(Dsn), er_dsn:secret_key(Dsn)),
   io:format("~p~n", [er_event:to_map(Event)]),
   Body = jsx:encode(er_event:to_map(Event)),
+  io:format("~s~n", [Body]),
   httpc:request(post, {Url, Headers, "application/json", Body}, [], []).
 
 %send_event(_Event, _Config) ->

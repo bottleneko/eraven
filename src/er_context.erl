@@ -4,7 +4,7 @@
                      environment :: binary(),
                      exception   :: binary(),
                      release     :: binary(),
-                     request     :: map(),
+                     request     :: er_request_context:t(),
                      extra       :: map(),
                      user        :: map(),
                      tags        :: map(),
@@ -54,7 +54,7 @@ release(#er_context{release = Release}) ->
   Release.
 
 request(#er_context{request = Request}) ->
-  Request.
+  er_request_context:to_map(Request).
 
 extra(#er_context{extra = Extra}) ->
   Extra.

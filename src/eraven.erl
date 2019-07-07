@@ -15,6 +15,14 @@ start(_, _) ->
   set_environment_context(eraven, <<"test_server">>, <<"develop">>, <<"v0.1.0">>),
   set_user_context(#{id => <<"test_id">>, username => <<"some_user">>, email => <<"user@example.com">>, ip_address => {8,8,8,8}}),
   set_process_tags(#{<<"test_process_tag2">> => tag}),
+  set_request_context(
+    'POST',
+    <<"https://localhost:9000/api/test">>,
+    #{<<"test header">> => <<"test header value">>,
+      <<"Content-Type">> => <<"application/json">>
+     },
+    #{<<"TEST_ENV">> => <<"TEST_ENV_VALUE">>},
+    #{<<"body_key">> => <<"body_value">>}),
   try
     error(<<"Test error">>)
   catch
@@ -57,3 +65,7 @@ set_user_context(UserData) ->
     Value :: atom() | binary().
 set_process_tags(Tags) ->
   logger:update_process_metadata(#{eraven_process_tags => Tags}).
+
+set_request_context(Method, Url, Headers, Env, Data) ->
+  RequestContext = er_request_context:new(Method, Url, Headers, Env, Data),
+  logger:update_process_metadata(#{eraven_request_context => RequestContext}).
