@@ -53,6 +53,7 @@ new(Message, Level, Type, Reason, Stacktrace, Context, Timestamp) ->
 
 to_map(Event) ->
   Context = Event#er_event.context,
+  EnvironmentContext = er_context:environment_context(Context),
 
   OptionalData = format_optional_data(Event),
 
@@ -61,10 +62,10 @@ to_map(Event) ->
     message     => Event#er_event.message,
     level       => Event#er_event.level,
     platform    => Event#er_event.platform,
-    server_name => er_context:server_name(Context),
-    environment => er_context:environment(Context),
-    release     => er_context:release(Context),
-    request     => er_context:request(Context),
+    server_name => er_environment_context:server_name(EnvironmentContext),
+    environment => er_environment_context:environment(EnvironmentContext),
+    release     => er_environment_context:release(EnvironmentContext),
+    request     => er_context:request_context(Context),
     extra       => er_context:extra(Context),
     user        => er_context:user(Context),
     tags        => er_context:tags(Context),

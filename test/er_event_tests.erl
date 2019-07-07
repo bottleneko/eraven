@@ -6,7 +6,8 @@ to_map_test_() ->
   ServerName = <<"test_server">>,
   Environment = <<"staging">>,
   Release = <<"v0.1.0">>,
-  Context = er_context:new(ServerName, Environment, Release, #{}, #{}, #{}, #{}, [], []),
+  EnvironmentContext = er_environment_context:new(ServerName, Environment, Release),
+  Context = er_context:new(EnvironmentContext, undefined, #{}, #{}, #{}, [], []),
   Message = <<"Message">>,
   Level = error,
   StacktraceWithArity =

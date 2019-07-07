@@ -20,10 +20,6 @@ log(#{msg   := Message,
   try
     io:format("HERE~nEVENT: ~p~nCONFIG: ~p~n", [LogEvent, Config]),
 
-    ServerName = er_environment_context:server_name(EnvironmentContext),
-    Environment = er_environment_context:environment(EnvironmentContext),
-    Release = er_environment_context:release(EnvironmentContext),
-
     UserContext = maps:get(user_context, Meta, undefined),
     UserContextData = er_user_context:to_map(UserContext),
 
@@ -33,7 +29,7 @@ log(#{msg   := Message,
 
     RequestContext = maps:get(eraven_request_context, Meta, undefined),
 
-    Context = er_context:new(ServerName, Environment, Release, RequestContext, #{}, UserContextData, Tags, [], []),
+    Context = er_context:new(EnvironmentContext, RequestContext, #{}, UserContextData, Tags, [], []),
     Event = build_event(format_message(Message), Level, Meta, Context),
     er_client:send_event(Event, Dsn, JsonEncodeFunction)
   catch

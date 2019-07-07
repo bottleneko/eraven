@@ -41,7 +41,6 @@ environment(#er_environment_context{environment = Environment}) ->
 release(#er_environment_context{release = Release}) ->
   Release.
 
-
 %%%===================================================================
 %%% Internal functions
 %%%===================================================================
