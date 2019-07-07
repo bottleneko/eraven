@@ -12,8 +12,9 @@
 log(#{msg   := Message,
       level := Level,
       meta  := Meta} = LogEvent,
-    #{config := #{dsn                 := Dsn,
-                  environment_context := EnvironmentContext
+    #{config := #{dsn                  := Dsn,
+                  environment_context  := EnvironmentContext,
+                  json_encode_function := JsonEncodeFunction
                  },
      event_tags_key := EventTagsKey} = Config) ->
   try
@@ -34,7 +35,7 @@ log(#{msg   := Message,
 
     Context = er_context:new(ServerName, Environment, Release, RequestContext, #{}, UserContextData, Tags, [], []),
     Event = build_event(format_message(Message), Level, Meta, Context),
-    er_client:send_event(Event, Dsn)
+    er_client:send_event(Event, Dsn, JsonEncodeFunction)
   catch
     Type:Error:Stacktrace ->
       io:format("~p~n~p~n~p~n", [Type, Error, Stacktrace])

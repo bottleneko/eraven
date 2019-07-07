@@ -3,18 +3,18 @@
 -define(SENTRY_VERSION, 7).
 -define(SENTRY_CLIENT, "eraven/0.1.0").
 
--export([send_event/2]).
+-export([send_event/3]).
 
 %%%===================================================================
 %%% API
 %%%===================================================================
 
-send_event(Event, Dsn) ->
+send_event(Event, Dsn, JsonEncodeFunction) ->
   io:format("SEND_EVENT~n"),
   Url = er_dsn:api_url(Dsn),
   Headers = authorization_headers(er_dsn:public_key(Dsn), er_dsn:secret_key(Dsn)),
   io:format("~p~n", [er_event:to_map(Event)]),
-  Body = jsx:encode(er_event:to_map(Event)),
+  Body = JsonEncodeFunction(er_event:to_map(Event)),
   io:format("~s~n", [Body]),
   httpc:request(post, {Url, Headers, "application/json", Body}, [], []).
 
