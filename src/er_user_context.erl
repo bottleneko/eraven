@@ -31,10 +31,10 @@ new(UserData) ->
   Size = maps:size(Filtered),
   if Size > 0 ->
       #er_user_context{
-         id         = maps:get(id, Filtered),
-         username   = maps:get(username, Filtered),
-         email      = maps:get(email, Filtered),
-         ip_address = maps:get(ip_address, Filtered)
+         id         = maps:get(id, Filtered, undefined),
+         username   = maps:get(username, Filtered, undefined),
+         email      = maps:get(email, Filtered, undefined),
+         ip_address = maps:get(ip_address, Filtered, undefined)
         };
     true ->
       undefined
@@ -50,7 +50,7 @@ to_map(UserData) ->
   Proplist = lists:zip(Fields, Data),
   Filter =
     fun({_Key, undefined = _Value}) -> false;
-       (_Property) -> true
+       (_Property)                  -> true
     end,
   Filtered = lists:filter(Filter, Proplist),
   Map = maps:from_list(Filtered),
