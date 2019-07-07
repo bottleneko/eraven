@@ -43,8 +43,8 @@ new(EnvironmentContext, Request, Extra, User, Tags, Breadcrumps, Fingerprint) ->
 environment_context(#er_context{environment_context = EnvironmentContext}) ->
   EnvironmentContext.
 
-request_context(#er_context{request_context = Request}) ->
-   er_request_context:to_map(Request).
+request_context(#er_context{request_context = RequestContext}) ->
+  RequestContext.
 
 extra(#er_context{extra = Extra}) ->
   Extra.

@@ -5,9 +5,9 @@
                    level                   :: fatal | error | warning | info | debug,
                    platform = <<"erlang">> :: binary(),
                    exception               :: #{type => error | throw, value => Reason :: term()},
-                   stacktrace              :: term() | undefined,
+                   stacktrace              :: term()            | undefined,
                    context                 :: term(),
-                   module                  :: atom() | undefined,
+                   module                  :: atom()            | undefined,
                    line                    :: non_neg_integer() | undefined
 %                   modules             :: [atom()]
                   }).
@@ -54,10 +54,9 @@ new(Message, Level, Type, Reason, Stacktrace, Context, Timestamp) ->
 to_map(Event) ->
   Context = Event#er_event.context,
   EnvironmentContext = er_context:environment_context(Context),
+  RequestContext = er_context:request_context(Context),
 
-  OptionalData = format_optional_data(Event),
-
-  OptionalData#{
+  Map0 = #{
     timestamp   => Event#er_event.timestamp,
     message     => Event#er_event.message,
     level       => Event#er_event.level,
@@ -65,38 +64,45 @@ to_map(Event) ->
     server_name => er_environment_context:server_name(EnvironmentContext),
     environment => er_environment_context:environment(EnvironmentContext),
     release     => er_environment_context:release(EnvironmentContext),
-    request     => er_context:request_context(Context),
+    request     => er_request_context:to_map(RequestContext),
     extra       => er_context:extra(Context),
     user        => er_context:user(Context),
     tags        => er_context:tags(Context),
     breadcrumbs => er_context:breadcrumbs(Context),
     fingerprint => er_context:fingerprint(Context)
-   }.
+   },
+
+  Filter =
+    fun(_Key, undefined = _Value) -> false;
+       (_Key, _Value)             -> true
+    end,
+  Map1 = maps:filter(Filter, Map0),
+  Map2 = maybe_culprit_from_location(Event, Map1),
+  maybe_data_from_stacktrace(Event, Map2).
 
 %%%===================================================================
 %%% Sentry formatters
 %%%===================================================================
 
-format_optional_data(Event) ->
-  MaybeDataFromStacktrace = maybe_data_from_stacktrace(Event),
-  MaybeCulpritFromLocation = maybe_culprit_from_location(Event),
-  maps:merge(MaybeDataFromStacktrace, MaybeCulpritFromLocation).
+maybe_culprit_from_location(#er_event{module = Module, line = Line} = _Event, Map) when
+    Module =:= undefined,
+    Line   =:= undefined ->
+  Map;
+maybe_culprit_from_location(#er_event{module = Module, line = Line} = _Event, Map) ->
+  Formatted = io_lib:format("~p:~B", [Module, Line]),
+  Map#{culprit => iolist_to_binary(Formatted)}.
 
-maybe_data_from_stacktrace(#er_event{stacktrace = Stacktrace} = _Event) when Stacktrace =:= undefined; Stacktrace =:= [] ->
-  #{};
-maybe_data_from_stacktrace(#er_event{stacktrace = [StacktraceLine | _RestStacktrace] = Stacktrace} = Event) ->
+maybe_data_from_stacktrace(#er_event{stacktrace = Stacktrace} = _Event, Map) when
+    Stacktrace =:= undefined;
+    Stacktrace =:= [] ->
+  Map;
+maybe_data_from_stacktrace(#er_event{stacktrace = [StacktraceLine | _RestStacktrace] = Stacktrace} = Event, Map) ->
   {Module, Function, ArgsOrArity, _Location} = StacktraceLine,
   Culprit = format_mfa(Module, Function, arity_to_integer(ArgsOrArity)),
-  #{culprit     => Culprit,
+  Map#{culprit     => Culprit,
     exception   => Event#er_event.exception,
     stacktrace  => format_stacktrace(Stacktrace)
    }.
-
-maybe_culprit_from_location(#er_event{module = Module, line = Line} = _Event) when Module =:= undefined; Line =:= undefined ->
-  #{};
-maybe_culprit_from_location(#er_event{module = Module, line = Line} = _Event) ->
-  Formatted = io_lib:format("~p:~B", [Module, Line]),
-  #{culprit => iolist_to_binary(Formatted)}.
 
 format_stacktrace(Stacktrace) ->
   Map =
@@ -117,6 +123,7 @@ format_stacktrace(Stacktrace) ->
 %%%===================================================================
 
 %% https://tools.ietf.org/html/rfc5424
+%% https://docs.sentry.io/enriching-error-data/context/#setting-the-level
 -spec map_event_level(SyslogEventLevel) -> SentryEventLevel when
     SyslogEventLevel :: atom(),
     SentryEventLevel :: atom().
