@@ -1,10 +1,9 @@
 -module(er_context).
 
 -record(er_context, {environment_context :: er_environment_context:t(),
-                     exception           :: binary(),
                      request_context     :: er_request_context:t(),
                      extra               :: map(),
-                     user                :: map(),
+                     user_context        :: er_user_context:t(),
                      tags                :: map(),
                      breadcrumbs         :: term(),
                      fingerprint         :: term()
@@ -18,21 +17,29 @@
 
 % Accessors
 -export([environment_context/1, request_context/1,
-         extra/1, user/1, tags/1,
+         extra/1, user_context/1, tags/1,
          breadcrumbs/1, fingerprint/1]).
 
 %%%===================================================================
 %%% API
 %%%===================================================================
 
-new(EnvironmentContext, Request, Extra, User, Tags, Breadcrumps, Fingerprint) ->
+-spec new(EnvironmentContext, RequestContext, Extra, UserContext, Tags, Breadcrumbs, Fingerprint) -> t() when
+    EnvironmentContext :: er_environment_context:t(),
+    RequestContext     :: er_request_context:t(),
+    Extra              :: map(),
+    UserContext        :: er_user_context:t(),
+    Tags               :: map(),
+    Breadcrumbs        :: map(),
+    Fingerprint        :: map().
+new(EnvironmentContext, RequestContext, Extra, UserContext, Tags, Breadcrumbs, Fingerprint) ->
   #er_context{
      environment_context = EnvironmentContext,
-     request_context     = Request,
+     request_context     = RequestContext,
      extra               = Extra,
-     user                = User,
+     user_context        = UserContext,
      tags                = Tags,
-     breadcrumbs         = Breadcrumps,
+     breadcrumbs         = Breadcrumbs,
      fingerprint         = Fingerprint
     }.
 
@@ -49,8 +56,8 @@ request_context(#er_context{request_context = RequestContext}) ->
 extra(#er_context{extra = Extra}) ->
   Extra.
 
-user(#er_context{user = User}) ->
-  User.
+user_context(#er_context{user_context = UserContext}) ->
+  UserContext.
 
 tags(#er_context{tags = Tags}) ->
   Tags.

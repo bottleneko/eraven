@@ -9,19 +9,26 @@
 %%% API
 %%%===================================================================
 
+-spec send_event(Event, Dsn, JsonEncodeFunction) -> ok when
+    Event              :: er_event:t(),
+    Dsn                :: er_dsn:t(),
+    JsonEncodeFunction :: fun((Data) -> Json),
+    Data               :: map(),
+    Json               :: binary().
 send_event(Event, Dsn, JsonEncodeFunction) ->
   Url = er_dsn:api_url(Dsn),
   Headers = authorization_headers(er_dsn:public_key(Dsn), er_dsn:secret_key(Dsn)),
   Body = JsonEncodeFunction(er_event:to_map(Event)),
-  httpc:request(post, {Url, Headers, "application/json", Body}, [], []).
+  httpc:request(post, {Url, Headers, "application/json", Body}, [], []),
+  ok.
 
 %%%===================================================================
 %%% Internal functions
 %%%===================================================================
 
 -spec authorization_headers(PublicKey, SecretKey) -> Headers when
-    PublicKey :: string(),
-    SecretKey :: string() | undefined,
+    PublicKey :: binary(),
+    SecretKey :: binary() | undefined,
     Headers   :: [{Field, Value}],
     Field     :: string(),
     Value     :: string().
@@ -40,7 +47,7 @@ authorization_headers(PublicKey, SecretKey) ->
   ].
 
 -spec maybe_secret(SecretKey) -> Format when
-    SecretKey :: string() | undefined,
+    SecretKey :: binary() | undefined,
     Format    :: string().
 maybe_secret(undefined = _SecretKey) ->
   "";

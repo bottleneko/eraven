@@ -18,7 +18,7 @@ to_map_test_() ->
   Data = #{<<"test_data_key">> => <<"test_data_value">>},
   RequestContext = er_request_context:new(Method, Url, Headers, Env, Data),
 
-  Context = er_context:new(EnvironmentContext, RequestContext, #{}, #{}, #{}, [], []),
+  Context = er_context:new(EnvironmentContext, RequestContext, #{}, undefined, #{}, [], []),
 
   Message = <<"Message">>,
   Level = error,

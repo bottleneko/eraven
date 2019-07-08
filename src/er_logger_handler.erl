@@ -22,13 +22,12 @@ log(#{msg   := Message,
   RequestContext = maps:get(eraven_request_context, Meta, undefined),
 
   UserContext = maps:get(eraven_user_context, Meta, undefined),
-  UserContextData = er_user_context:to_map(UserContext),
 
   ProcessTags = maps:get(eraven_process_tags, Meta, #{}),
   EventTags = maps:get(EventTagsKey, Meta, #{}),
   Tags = maps:merge(ProcessTags, EventTags),
 
-  Context = er_context:new(EnvironmentContext, RequestContext, #{}, UserContextData, Tags, [], []),
+  Context = er_context:new(EnvironmentContext, RequestContext, #{}, UserContext, Tags, #{}, #{}),
   Event = build_event(format_message(Message), Level, Meta, Context),
   er_client:send_event(Event, Dsn, JsonEncodeFunction).
 
@@ -56,6 +55,11 @@ format_message({Format, Data}) ->
   Formatted = io_lib:format(Format, Data),
   iolist_to_binary(Formatted).
 
+-spec build_event(Message, Level, Metadata, Context) -> er_event:t() when
+    Message  :: binary(),
+    Level    :: logger:level(),
+    Metadata :: map(),
+    Context  :: er_context:t().
 build_event(Message, Level, #{type := Type, reason := Reason, stacktrace := Stacktrace, time := Timestamp} = _Meta, Context) ->
   er_event:new(Message, Level, Type, Reason, Stacktrace, Context, Timestamp div ?MICROSECONDS_IN_SECONDS);
 build_event(Message, Level, #{mfa := {Module, _Function, _Arity}, line := Line, time := Timestamp} = _Meta, Context) ->

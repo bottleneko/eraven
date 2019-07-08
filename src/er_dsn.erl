@@ -2,7 +2,7 @@
 
 -record(er_dsn, {scheme     :: http | https,
                  public_key :: binary(),
-                 secret_key :: binary(),
+                 secret_key :: binary() | undefined,
                  hostname   :: binary(),
                  port       :: non_neg_integer(),
                  project_id :: non_neg_integer()
@@ -42,13 +42,13 @@ new(DsnString) ->
 
 -spec public_key(Dsn) -> PublicKey when
     Dsn       :: t(),
-    PublicKey :: string().
+    PublicKey :: binary().
 public_key(#er_dsn{public_key = PublicKey}) ->
   PublicKey.
 
 -spec secret_key(Dsn) -> SecretKey when
     Dsn       :: t(),
-    SecretKey :: string().
+    SecretKey :: binary() | undefined.
 secret_key(#er_dsn{secret_key = SecretKey}) ->
   SecretKey.
 
@@ -65,8 +65,8 @@ api_url(#er_dsn{scheme = Scheme, hostname = HostName, port = Port, project_id = 
 
 -spec parse_keys(UserInfo) -> {PublicKey, SecretKey} when
     UserInfo  :: string(),
-    PublicKey :: string(),
-    SecretKey :: string() | undefined.
+    PublicKey :: binary(),
+    SecretKey :: binary() | undefined.
 parse_keys(UserInfo) ->
   case string:split(UserInfo, ":") of
     [PublicKey, SecretKey] ->

@@ -4,7 +4,7 @@
                    message                 :: binary(),
                    level                   :: fatal | error | warning | info | debug,
                    platform = <<"erlang">> :: binary(),
-                   exception               :: #{type => error | throw, value => Reason :: term()},
+                   exception               :: #{type => error | throw, value => Reason :: term()} | undefined,
                    stacktrace              :: term()            | undefined,
                    context                 :: term(),
                    module                  :: atom()            | undefined,
@@ -13,7 +13,6 @@
                   }).
 
 -opaque t() :: #er_event{}.
-
 -export_type([t/0]).
 
 -export([new/4, new/6, new/7]).
@@ -23,6 +22,11 @@
 %%% API
 %%%===================================================================
 
+-spec new(Message, Level, Context, Timestamp) -> t() when
+    Message   :: binary(),
+    Level     :: logger:level(),
+    Context   :: er_context:t(),
+    Timestamp :: non_neg_integer().
 new(Message, Level, Context, Timestamp) ->
   #er_event{
      timestamp = Timestamp,
@@ -31,6 +35,13 @@ new(Message, Level, Context, Timestamp) ->
      context   = Context
    }.
 
+-spec new(Message, Level, Module, Line, Context, Timestamp) -> t() when
+    Message   :: binary(),
+    Level     :: logger:level(),
+    Module    :: atom(),
+    Line      :: non_neg_integer(),
+    Context   :: er_context:t(),
+    Timestamp :: non_neg_integer().
 new(Message, Level, Module, Line, Context, Timestamp) ->
   #er_event{
      timestamp = Timestamp,
@@ -41,6 +52,14 @@ new(Message, Level, Module, Line, Context, Timestamp) ->
      context   = Context
    }.
 
+-spec new(Message, Level, Type, Reason, Stacktrace, Context, Timestamp) -> t() when
+    Message    :: binary(),
+    Level      :: logger    :level(),
+    Type       :: error | throw,
+    Reason     :: term(),
+    Stacktrace :: term(),
+    Context    :: er_context:t(),
+    Timestamp  :: non_neg_integer().
 new(Message, Level, Type, Reason, Stacktrace, Context, Timestamp) ->
   #er_event{
      timestamp  = Timestamp,
@@ -51,10 +70,12 @@ new(Message, Level, Type, Reason, Stacktrace, Context, Timestamp) ->
      context    = Context
     }.
 
+-spec to_map(t()) -> map().
 to_map(Event) ->
   Context = Event#er_event.context,
   EnvironmentContext = er_context:environment_context(Context),
   RequestContext = er_context:request_context(Context),
+  UserContext = er_context:user_context(Context),
 
   Map0 = #{
     timestamp   => Event#er_event.timestamp,
@@ -66,7 +87,7 @@ to_map(Event) ->
     release     => call_or(fun er_environment_context:release/1,     EnvironmentContext),
     request     => call_or(fun er_request_context:to_map/1, RequestContext),
     extra       => er_context:extra(Context),
-    user        => er_context:user(Context),
+    user        => call_or(fun er_user_context:to_map/1, UserContext),
     tags        => er_context:tags(Context),
     breadcrumbs => er_context:breadcrumbs(Context),
     fingerprint => er_context:fingerprint(Context)
@@ -142,12 +163,12 @@ to_binary(String) when is_list(String) ->
   list_to_binary(String).
 
 %% TODO: add limits
--spec parse_args(ArgsOrArity) -> Args when
-    ArgsOrArity :: Args | Arity,
+-spec parse_args(ArityOrArgs) -> Args when
+    ArityOrArgs :: Args | Arity,
+    Arity       :: non_neg_integer(),
     Args        :: [{Key, Value}],
-    Key         :: string(),
-    Value       :: term(),
-    Arity       :: non_neg_integer().
+    Key         :: binary(),
+    Value       :: any().
 parse_args(Args) when is_list(Args) ->
   Indexes = lists:seq(0, max(0, length(Args) - 1)),
   Enumerated = lists:zip(Indexes, Args),
@@ -178,7 +199,9 @@ format_mfa(Module, Function, Arity) ->
   Formatted = io_lib:format(<<"~p:~p/~B">>, [Module, Function, Arity]),
   iolist_to_binary(Formatted).
 
--spec call_or(Function, Argument) -> Result | undefined when
+-dialyzer({nowarn_function, call_or/2}).
+-spec call_or(Function :: any(), undefined) -> undefined;
+             (Function, Argument)           -> Result when
     Function :: fun((Argument) -> Result),
     Argument :: term(),
     Result   :: term().

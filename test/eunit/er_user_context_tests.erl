@@ -51,6 +51,5 @@ to_map_test_() ->
                 ),
    ?_assertEqual(maps:without([id, username, ip_address], MapUserData),
                  to_map(new(maps:without([id, username, ip_address], UserData)))
-                ),
-   ?_assertEqual(#{}, to_map(undefined))
+                )
   ].

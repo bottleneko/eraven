@@ -41,9 +41,7 @@ new(UserData) ->
   end.
 
 -spec to_map(UserContext) -> map() when
-    UserContext :: t() | undefined.
-to_map(undefined) ->
-  #{};
+    UserContext :: t().
 to_map(UserData) ->
   Fields = record_info(fields, er_user_context),
   Data = tl(tuple_to_list(UserData)),
