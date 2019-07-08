@@ -7,7 +7,19 @@ to_map_test_() ->
   Environment = <<"staging">>,
   Release = <<"v0.1.0">>,
   EnvironmentContext = er_environment_context:new(ServerName, Environment, Release),
-  Context = er_context:new(EnvironmentContext, undefined, #{}, #{}, #{}, [], []),
+
+  Method = 'POST',
+  Url = <<"https://localhost:9000/api/test">>,
+  Headers =
+    #{<<"test_header">> => <<"test_header_value">>,
+      <<"Content-Type">> => <<"application/json">>
+     },
+  Env = #{<<"TEST_ENV">> => <<"TEST_ENV_VALUE">>},
+  Data = #{<<"test_data_key">> => <<"test_data_value">>},
+  RequestContext = er_request_context:new(Method, Url, Headers, Env, Data),
+
+  Context = er_context:new(EnvironmentContext, RequestContext, #{}, #{}, #{}, [], []),
+
   Message = <<"Message">>,
   Level = error,
   StacktraceWithArity =

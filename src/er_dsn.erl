@@ -19,19 +19,23 @@
 %%% API
 %%%===================================================================
 
--spec new(DsnString :: string()) -> t().
+-spec new(DsnString) -> {ok, t()} | {error, Reason} when
+    DsnString :: string(),
+    Reason    :: term().
 new(DsnString) ->
   case http_uri:parse(DsnString) of
     {ok, {Scheme, UserInfo, Hostname, Port, Path, _Qs}} ->
       {PublicKey, SecretKey} = parse_keys(UserInfo),
-      #er_dsn{
-         scheme     = Scheme,
-         public_key = PublicKey,
-         secret_key = SecretKey,
-         hostname   = Hostname,
-         port       = Port,
-         project_id = parse_project_id(Path)
-        };
+      Dsn =
+        #er_dsn{
+           scheme     = Scheme,
+           public_key = PublicKey,
+           secret_key = SecretKey,
+           hostname   = Hostname,
+           port       = Port,
+           project_id = parse_project_id(Path)
+          },
+      {ok, Dsn};
     {error, _Reason} = Error ->
       Error
   end.

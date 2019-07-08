@@ -26,8 +26,6 @@ new(Method, Url, Headers, Env, Data) ->
      data         = Data
     }.
 
-to_map(undefined) ->
-  undefined;
 to_map(#er_request_context{method = Method, url = Url, headers = Headers, env = Env, data = Data}) ->
   SerializedHeaders = lists:map(fun tuple_to_list/1, maps:to_list(Headers)),
   #{method                => Method,

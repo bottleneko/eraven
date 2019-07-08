@@ -61,10 +61,10 @@ to_map(Event) ->
     message     => Event#er_event.message,
     level       => Event#er_event.level,
     platform    => Event#er_event.platform,
-    server_name => er_environment_context:server_name(EnvironmentContext),
-    environment => er_environment_context:environment(EnvironmentContext),
-    release     => er_environment_context:release(EnvironmentContext),
-    request     => er_request_context:to_map(RequestContext),
+    server_name => call_or(fun er_environment_context:server_name/1, EnvironmentContext),
+    environment => call_or(fun er_environment_context:environment/1, EnvironmentContext),
+    release     => call_or(fun er_environment_context:release/1,     EnvironmentContext),
+    request     => call_or(fun er_request_context:to_map/1, RequestContext),
     extra       => er_context:extra(Context),
     user        => er_context:user(Context),
     tags        => er_context:tags(Context),
@@ -177,3 +177,33 @@ arity_to_integer(Args) ->
 format_mfa(Module, Function, Arity) ->
   Formatted = io_lib:format(<<"~p:~p/~B">>, [Module, Function, Arity]),
   iolist_to_binary(Formatted).
+
+-spec call_or(Function, Argument) -> Result | undefined when
+    Function :: fun((Argument) -> Result),
+    Argument :: term(),
+    Result   :: term().
+call_or(_Function, undefined) ->
+  undefined;
+call_or(Function, Argument) ->
+  Function(Argument).
+
+%%%===================================================================
+%%% Tests
+%%%===================================================================
+
+-ifdef(TEST).
+
+-include_lib("eunit/include/eunit.hrl").
+
+map_event_level_test_() ->
+  [?_assertEqual(fatal, map_event_level(emergency)),
+   ?_assertEqual(fatal, map_event_level(alert)),
+   ?_assertEqual(fatal, map_event_level(critical)),
+   ?_assertEqual(error, map_event_level(error)),
+   ?_assertEqual(warning, map_event_level(warning)),
+   ?_assertEqual(warning, map_event_level(notice)),
+   ?_assertEqual(info, map_event_level(info)),
+   ?_assertEqual(debug, map_event_level(debug))
+  ].
+
+-endif.

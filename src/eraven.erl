@@ -1,7 +1,5 @@
 -module(eraven).
 
--include_lib("kernel/include/logger.hrl").
-
 % API
 -export([set_environment_context/4, set_user_context/1, set_process_tags/1, set_request_context/5]).
 

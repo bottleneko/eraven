@@ -11,33 +11,26 @@
 
 log(#{msg   := Message,
       level := Level,
-      meta  := Meta} = LogEvent,
+      meta  := Meta} = _LogEvent,
     #{config := #{dsn                  := Dsn,
-                  environment_context  := EnvironmentContext,
-                  json_encode_function := JsonEncodeFunction
-                 },
-     event_tags_key := EventTagsKey} = Config) ->
-  try
-    io:format("HERE~nEVENT: ~p~nCONFIG: ~p~n", [LogEvent, Config]),
+                  json_encode_function := JsonEncodeFunction,
+                  event_tags_key       := EventTagsKey
+                 } = Config
+     } = _HandlerConfig) ->
+  EnvironmentContext = maps:get(environment_context, Config, undefined),
 
-    UserContext = maps:get(eraven_user_context, Meta, undefined),
-    UserContextData = er_user_context:to_map(UserContext),
+  RequestContext = maps:get(eraven_request_context, Meta, undefined),
 
-    ProcessTags = maps:get(eraven_process_tags, Meta, #{}),
-    EventTags = maps:get(EventTagsKey, Meta, #{}),
-    Tags = maps:merge(ProcessTags, EventTags),
+  UserContext = maps:get(eraven_user_context, Meta, undefined),
+  UserContextData = er_user_context:to_map(UserContext),
 
-    RequestContext = maps:get(eraven_request_context, Meta, undefined),
+  ProcessTags = maps:get(eraven_process_tags, Meta, #{}),
+  EventTags = maps:get(EventTagsKey, Meta, #{}),
+  Tags = maps:merge(ProcessTags, EventTags),
 
-    Context = er_context:new(EnvironmentContext, RequestContext, #{}, UserContextData, Tags, [], []),
-    Event = build_event(format_message(Message), Level, Meta, Context),
-    er_client:send_event(Event, Dsn, JsonEncodeFunction)
-  catch
-    Type:Error:Stacktrace ->
-      io:format("~p~n~p~n~p~n", [Type, Error, Stacktrace])
-  end;
-log(LogEvent, Config) ->
-  io:format("HERE2~nEVENT: ~p~nCONFIG: ~p~n", [LogEvent, Config]).
+  Context = er_context:new(EnvironmentContext, RequestContext, #{}, UserContextData, Tags, [], []),
+  Event = build_event(format_message(Message), Level, Meta, Context),
+  er_client:send_event(Event, Dsn, JsonEncodeFunction).
 
 filter_config(Config) ->
   Config.
