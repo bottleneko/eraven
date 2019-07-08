@@ -1,4 +1,6 @@
 eraven
+
+[![Build Status](https://travis-ci.org/bottleneko/eraven.svg?branch=master)](https://travis-ci.org/bottleneko/eraven)
 =====
 
 Erlang client for Sentry.
