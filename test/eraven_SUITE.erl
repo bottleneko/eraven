@@ -10,6 +10,7 @@
 
 all() ->
   [set_environment_context,
+   set_process_extra,
    set_user_context,
    set_process_tags,
    set_request_context
@@ -41,6 +42,13 @@ set_environment_context(_Config) ->
   eraven:set_environment_context(eraven, ServerName, Environment, Release),
   {ok, #{config := Config}} = logger:get_handler_config(eraven),
   ?assertMatch(#{environment_context := EnvironmentContext}, Config).
+
+set_process_extra(_Config) ->
+  ProcessExtra = #{<<"some_extra">> => <<"some_extra_value">>},
+
+  eraven:set_process_extra(ProcessExtra),
+
+  ?assertMatch(#{eraven_process_extra := ProcessExtra}, logger:get_process_metadata()).
 
 set_user_context(_Config) ->
   InternalIdentifier = <<"test_id">>,

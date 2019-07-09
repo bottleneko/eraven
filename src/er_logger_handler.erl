@@ -14,7 +14,8 @@ log(#{msg   := Message,
       meta  := Meta} = _LogEvent,
     #{config := #{dsn                  := Dsn,
                   json_encode_function := JsonEncodeFunction,
-                  event_tags_key       := EventTagsKey
+                  event_tags_key       := EventTagsKey,
+                  event_extra_key      := EventExtraKey
                  } = Config
      } = _HandlerConfig) ->
   EnvironmentContext = maps:get(environment_context, Config, undefined),
@@ -27,7 +28,11 @@ log(#{msg   := Message,
   EventTags = maps:get(EventTagsKey, Meta, #{}),
   Tags = maps:merge(ProcessTags, EventTags),
 
-  Context = er_context:new(EnvironmentContext, RequestContext, #{}, UserContext, Tags, #{}, #{}),
+  ProcessExtra = maps:get(eraven_process_extra, Meta, #{}),
+  EventExtra = maps:get(EventExtraKey, Meta, #{}),
+  Extra = maps:merge(ProcessExtra, EventExtra),
+
+  Context = er_context:new(EnvironmentContext, RequestContext, Extra, UserContext, Tags, #{}, #{}),
   Event = build_event(format_message(Message), Level, Meta, Context),
   er_client:send_event(Event, Dsn, JsonEncodeFunction).
 
