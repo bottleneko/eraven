@@ -59,7 +59,7 @@ exception_with_stacktrace_test(_Config) ->
   ?assertEqual("/api/1/store/", bookish_spork_request:uri(Request)),
   ?assertMatch(#{"connection"     := "keep-alive",
                  "content-length" := _ContentLength,
-                 "content-type"   := "application/json",
+                 "content-type"   := "application/octet-stream",
                  "host"           := "localhost:9090",
                  "user-agent"     := "eraven/0.1.0",
                  "x-sentry-auth"  := _XSentryAuth
@@ -84,7 +84,7 @@ exception_with_location_test(_Config) ->
   ?assertEqual("/api/1/store/", bookish_spork_request:uri(Request)),
   ?assertMatch(#{"connection"     := "keep-alive",
                  "content-length" := _ContentLength,
-                 "content-type"   := "application/json",
+                 "content-type"   := "application/octet-stream",
                  "host"           := "localhost:9090",
                  "user-agent"     := "eraven/0.1.0",
                  "x-sentry-auth"  := _XSentryAuth
@@ -110,7 +110,7 @@ exception_test(_Config) ->
   ?assertEqual("/api/1/store/", bookish_spork_request:uri(Request)),
   ?assertMatch(#{"connection"     := "keep-alive",
                  "content-length" := _ContentLength,
-                 "content-type"   := "application/json",
+                 "content-type"   := "application/octet-stream",
                  "host"           := "localhost:9090",
                  "user-agent"     := "eraven/0.1.0",
                  "x-sentry-auth"  := _XSentryAuth
@@ -135,7 +135,7 @@ exception_old_dsn_test(_Config) ->
   ?assertEqual("/api/1/store/", bookish_spork_request:uri(Request)),
   ?assertMatch(#{"connection"     := "keep-alive",
                  "content-length" := _ContentLength,
-                 "content-type"   := "application/json",
+                 "content-type"   := "application/octet-stream",
                  "host"           := "localhost:9090",
                  "user-agent"     := "eraven/0.1.0",
                  "x-sentry-auth"  := _XSentryAuth

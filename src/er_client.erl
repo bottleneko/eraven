@@ -3,6 +3,12 @@
 -define(SENTRY_VERSION, 7).
 -define(SENTRY_CLIENT, "eraven/0.1.0").
 
+-ifdef(TEST).
+-define(HTTPC_OPTIONS, [{body_format, binary}]).
+-else.
+-define(HTTPC_OPTIONS, [{body_format, binary}, {sync, false}, {receiver, fun(_) -> ok end}]).
+-endif.
+
 -export([send_event/3]).
 
 %%%===================================================================
@@ -19,7 +25,10 @@ send_event(Event, Dsn, JsonEncodeFunction) ->
   Url = er_dsn:api_url(Dsn),
   Headers = authorization_headers(er_dsn:public_key(Dsn), er_dsn:secret_key(Dsn)),
   Body = JsonEncodeFunction(er_event:to_map(Event)),
-  httpc:request(post, {Url, Headers, "application/json", Body}, [], []),
+  CompressedBody = base64:encode(zlib:compress(Body)),
+  Request = {Url, Headers, "application/octet-stream", CompressedBody},
+
+  httpc:request(post, Request, [], ?HTTPC_OPTIONS),
   ok.
 
 %%%===================================================================
