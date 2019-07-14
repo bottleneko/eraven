@@ -6,7 +6,7 @@
                      user_context        :: er_user_context:t(),
                      tags                :: map(),
                      breadcrumbs         :: term(),
-                     fingerprint         :: term()
+                     fingerprint         :: binary()
                     }).
 
 -opaque t() :: #er_context{}.
@@ -31,7 +31,7 @@
     UserContext        :: er_user_context:t(),
     Tags               :: map(),
     Breadcrumbs        :: map(),
-    Fingerprint        :: map().
+    Fingerprint        :: [binary()].
 new(EnvironmentContext, RequestContext, Extra, UserContext, Tags, Breadcrumbs, Fingerprint) ->
   #er_context{
      environment_context = EnvironmentContext,

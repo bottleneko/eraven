@@ -41,7 +41,8 @@ exception_with_stacktrace_test(_Config) ->
     #{config => #{dsn                  => Dsn,
                   json_encode_function => fun jsx:encode/1,
                   event_tags_key       => event_tags,
-                  event_extra_key      => event_extra
+                  event_extra_key      => event_extra,
+                  fingerprint_key      => fingerprint
                  },
       level     => all
      },
@@ -71,7 +72,8 @@ exception_with_location_test(_Config) ->
     #{config => #{dsn                  => Dsn,
                   json_encode_function => fun jsx:encode/1,
                   event_tags_key       => event_tags,
-                  event_extra_key      => event_extra
+                  event_extra_key      => event_extra,
+                  fingerprint_key      => fingerprint
                  },
       level     => all
      },
@@ -97,7 +99,8 @@ exception_test(_Config) ->
     #{config => #{dsn                  => Dsn,
                   json_encode_function => fun jsx:encode/1,
                   event_tags_key       => event_tags,
-                  event_extra_key      => event_extra
+                  event_extra_key      => event_extra,
+                  fingerprint_key      => fingerprint
                  },
       level     => all
      },
@@ -122,7 +125,8 @@ exception_old_dsn_test(_Config) ->
     #{config => #{dsn                  => Dsn,
                   json_encode_function => fun jsx:encode/1,
                   event_tags_key       => event_tags,
-                  event_extra_key      => event_extra
+                  event_extra_key      => event_extra,
+                  fingerprint_key      => fingerprint
                  },
       level     => all
      },

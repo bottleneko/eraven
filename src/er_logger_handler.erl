@@ -15,7 +15,8 @@ log(#{msg   := Message,
     #{config := #{dsn                  := Dsn,
                   json_encode_function := JsonEncodeFunction,
                   event_tags_key       := EventTagsKey,
-                  event_extra_key      := EventExtraKey
+                  event_extra_key      := EventExtraKey,
+                  fingerprint_key      := FingerprintKey
                  } = Config
      } = _HandlerConfig) ->
   EnvironmentContext = maps:get(environment_context, Config, undefined),
@@ -32,7 +33,9 @@ log(#{msg   := Message,
   EventExtra = maps:get(EventExtraKey, Meta, #{}),
   Extra = maps:merge(ProcessExtra, EventExtra),
 
-  Context = er_context:new(EnvironmentContext, RequestContext, Extra, UserContext, Tags, #{}, #{}),
+  Fingerprint = maps:get(FingerprintKey, Meta, [<<"{{ default }}">>]),
+
+  Context = er_context:new(EnvironmentContext, RequestContext, Extra, UserContext, Tags, #{}, Fingerprint),
   Event = build_event(format_message(Message), Level, Meta, Context),
   er_client:send_event(Event, Dsn, JsonEncodeFunction).
 
