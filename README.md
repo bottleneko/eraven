@@ -5,16 +5,14 @@ eraven
 
 Erlang client for Sentry.
 
-Features
------
+## Features
 
 * Zero third-party deps
 * Support many kinds of [Sentry Interfaces](https://docs.sentry.io/development/sdk-dev/interfaces/)
 * Flexible logging interfaces
 * Use as new Erlang/OTP 21.0 logger handler
 
-Examples
------
+## Examples
 
 Here's example of using eraven in the Erlang shell:
 
@@ -31,12 +29,11 @@ Here's example of using eraven in the Erlang shell:
 3> logger:error("Test error", []).
 ```
 
-Contexts
------
+## Contexts
 
 eraven supports various contexts also known as Sentry interfaces.
 
-It's user context:
+### [Sentry User Context](https://docs.sentry.io/development/sdk-dev/interfaces/#user-interface)
 
 ```erlang
 1> set_user_context(
@@ -49,7 +46,7 @@ It's user context:
 
 User context being installed for a process, all logging events captured by eraven be have a user context.
 
-Request context:
+### [Sentry Request Context](https://docs.sentry.io/development/sdk-dev/interfaces/#http-interface)
 
 ```erlang
 1> set_request_context(
@@ -64,7 +61,7 @@ Request context:
 
 Request context being installed for a process, all logging events captured by eraven be have an request context.
 
-Enviroment context:
+### [Sentry Environment Context](https://docs.sentry.io/development/sdk-dev/attributes/#required-attributes)
 
 ```erlang
 1> set_environment_context(eraven, <<"test_server">>, <<"test_enviroment">>, <<"v0.1.0">>),
@@ -72,7 +69,7 @@ Enviroment context:
 
 Request context being installed for an eraven log handler, all logging events captured by this handler be have a enviroment context.
 
-Tags:
+### [Sentry Tags](https://docs.sentry.io/development/sdk-dev/attributes/#optional-attributes)
 
 Eraven supports two types of tags. Is process and event tags. Event tags be used from process metadata by key setted in config `event_tags_key`.
 
@@ -90,6 +87,8 @@ Eraven supports two types of tags. Is process and event tags. Event tags be used
 3> eraven:set_process_tags(#{test_tag => tag}).
 4> logger:error("Test error", [], #{event_tags => #{other_test_tag => other_tag}}).
 ```
+
+### [Sentry Extra](https://docs.sentry.io/development/sdk-dev/attributes/#optional-attributes)
 
 In same way you can configure extra: from event metadata and from process metadata by key setted in config `event_extra_key`
 
@@ -126,8 +125,7 @@ You can configure fingerprint from event metadata by key setting in config `even
 3> logger:error("Test error", [], #{fingerprint => [<<"default">>]}}).
 ```
 
-Development
------
+## Development
 
 Installation
 
@@ -137,7 +135,6 @@ Clean-up
 
     $ make remove-sentry
 
-Use
------
+## Use
 
     {deps, [eraven]}.
