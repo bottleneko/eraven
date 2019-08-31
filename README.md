@@ -137,4 +137,17 @@ Clean-up
 
 ## Use
 
+Rebar3
+
     {deps, [eraven]}.
+
+## Roadmap
+
+- [x] Writing test for 100% coverage
+- [x] Fix all dialyzer errors
+- [ ] Support Breadcrumbs
+- [ ] Adding [Elvis](https://github.com/inaka/elvis)
+- [ ] Usage in production
+- [ ] [Unified API](https://docs.sentry.io/development/sdk-dev/unified-api/)
+- [ ] Benchmarks
+- [ ] Usage instructions for Erlang.mk
