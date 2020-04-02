@@ -24,7 +24,8 @@ Here's example of using eraven in the Erlang shell:
     #{config => #{dsn                  => Dsn,
                   json_encode_function => fun jsx:encode/1,
                   event_tags_key       => event_tags,
-                  event_extra_key      => event_extra
+                  event_extra_key      => event_extra,
+                  fingerprint_key      => fingerprint
                  }}).
 3> logger:error("Test error", []).
 ```
@@ -104,7 +105,7 @@ In same way you can configure extra: from event metadata and from process metada
                   fingerprint_key      => fingerprint
                  }}).
 3> eraven:set_process_tags(#{extra => extra}).
-4> logger:error("Test error", [], #{event_tags => #{other_extra => other_extra}}).
+4> logger:error("Test error", [], #{event_extra => #{other_extra => other_extra}}).
 ```
 
 ### [Sentry Fingerprint](https://docs.sentry.io/data-management/rollups)
