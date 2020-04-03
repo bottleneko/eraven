@@ -22,7 +22,7 @@
 -spec new(DsnString) -> {ok, t()} | {error, Reason} when
     DsnString :: string(),
     Reason    :: term().
-new(DsnString) ->
+new(DsnString) when is_list(DsnString) ->
   case http_uri:parse(DsnString) of
     {ok, {Scheme, UserInfo, Hostname, Port, Path, _Qs}} ->
       {PublicKey, SecretKey} = parse_keys(UserInfo),
@@ -38,7 +38,9 @@ new(DsnString) ->
       {ok, Dsn};
     {error, _Reason} = Error ->
       Error
-  end.
+  end;
+new(Dsn) when is_record(Dsn, er_dsn) ->
+  {ok, Dsn}.
 
 -spec public_key(Dsn) -> PublicKey when
     Dsn       :: t(),

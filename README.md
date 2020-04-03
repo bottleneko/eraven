@@ -17,18 +17,15 @@ Erlang client for Sentry.
 Here's example of using eraven in the Erlang shell:
 
 ```erlang
-1> {ok, Dsn} = er_dsn:new("http://9f293de25b2c4a74b09ae731ba6aac58@localhost:9000/1").
-2> logger:add_handler(
+1> logger:add_handler(
     eraven,
     er_logger_handler,
-    #{config => #{dsn                  => Dsn,
-                  json_encode_function => fun jsx:encode/1,
-                  event_tags_key       => event_tags,
-                  event_extra_key      => event_extra,
-                  fingerprint_key      => fingerprint
-                 }}).
-3> logger:error("Test error", []).
+    #{config => #{
+      dsn => "http://9f293de25b2c4a74b09ae731ba6aac58@localhost:9000/1"
+    }}).
+2> logger:error("Test error", []).
 ```
+Dsn string is located in the `Client Keys (DSN)` section of your `Project Settings` in Sentry.
 
 ## Contexts
 
@@ -75,18 +72,17 @@ Request context being installed for an eraven log handler, all logging events ca
 Eraven supports two types of tags. Is process and event tags. Event tags be used from process metadata by key setted in config `event_tags_key`.
 
 ```erlang
-1> {ok, Dsn} = er_dsn:new("http://9f293de25b2c4a74b09ae731ba6aac58@localhost:9000/1").
-2> logger:add_handler(
+1> logger:add_handler(
     eraven,
     er_logger_handler,
-    #{config => #{dsn                  => Dsn,
+    #{config => #{dsn                  => "http://9f293de25b2c4a74b09ae731ba6aac58@localhost:9000/1",
                   json_encode_function => fun jsx:encode/1,
                   event_tags_key       => event_tags,
                   event_extra_key      => event_extra,
                   fingerprint_key      => fingerprint
                  }}).
-3> eraven:set_process_tags(#{test_tag => tag}).
-4> logger:error("Test error", [], #{event_tags => #{other_test_tag => other_tag}}).
+2> eraven:set_process_tags(#{test_tag => tag}).
+3> logger:error("Test error", [], #{event_tags => #{other_test_tag => other_tag}}).
 ```
 
 ### [Sentry Extra](https://docs.sentry.io/development/sdk-dev/attributes/#optional-attributes)
@@ -94,18 +90,17 @@ Eraven supports two types of tags. Is process and event tags. Event tags be used
 In same way you can configure extra: from event metadata and from process metadata by key setted in config `event_extra_key`
 
 ```erlang
-1> {ok, Dsn} = er_dsn:new("http://9f293de25b2c4a74b09ae731ba6aac58@localhost:9000/1").
-2> logger:add_handler(
+1> logger:add_handler(
     eraven,
     er_logger_handler,
-    #{config => #{dsn                  => Dsn,
+    #{config => #{dsn                  => "http://9f293de25b2c4a74b09ae731ba6aac58@localhost:9000/1",
                   json_encode_function => fun jsx:encode/1,
                   event_tags_key       => event_tags,
                   event_extra_key      => event_extra,
                   fingerprint_key      => fingerprint
                  }}).
-3> eraven:set_process_tags(#{extra => extra}).
-4> logger:error("Test error", [], #{event_extra => #{other_extra => other_extra}}).
+2> eraven:set_process_tags(#{extra => extra}).
+3> logger:error("Test error", [], #{event_extra => #{other_extra => other_extra}}).
 ```
 
 ### [Sentry Fingerprint](https://docs.sentry.io/data-management/rollups)
@@ -113,17 +108,16 @@ In same way you can configure extra: from event metadata and from process metada
 You can configure fingerprint from event metadata by key setting in config `event_extra_key`
 
 ```erlang
-1> {ok, Dsn} = er_dsn:new("http://9f293de25b2c4a74b09ae731ba6aac58@localhost:9000/1").
-2> logger:add_handler(
+1> logger:add_handler(
     eraven,
     er_logger_handler,
-    #{config => #{dsn                  => Dsn,
+    #{config => #{dsn                  => "http://9f293de25b2c4a74b09ae731ba6aac58@localhost:9000/1",
                   json_encode_function => fun jsx:encode/1,
                   event_tags_key       => event_tags,
                   event_extra_key      => event_extra,
                   fingerprint_key      => fingerprint
                  }}).
-3> logger:error("Test error", [], #{fingerprint => [<<"default">>]}}).
+2> logger:error("Test error", [], #{fingerprint => [<<"default">>]}}).
 ```
 
 ## Development
