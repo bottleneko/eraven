@@ -1,18 +1,65 @@
+.DEFAULT_GOAL := all
+
+.NOTPARALLEL:
+
+DOCKER := docker
+COMPOSE := docker-compose
+
+EXEC := $(COMPOSE) exec workspace
+
+REBAR := $(EXEC) rebar3
+
+.PHONY: all
+all: .env workspace-build install-sentry workspace-up shell
+
+### ==================================================================
+### Local environment
+### ==================================================================
+
+.PHONY: workspace
+workspace:
+	$(EXEC) bash
+
+.PHONY: workspace-build
+workspace-build:
+	$(COMPOSE) build
+
+.PHONY: workspace-build
+workspace-up:
+	$(COMPOSE) up --detach --remove-orphans
+
+.PHONY: workspace-down
+workspace-down:
+	$(COMPOSE) down --remove-orphans
+
+.env:
+	cp .env.example .env
+
+.PHONY: install-sentry
 install-sentry:
-	docker volume create --name=sentry-data
-	docker volume create --name=sentry-postgres
-	test -f .env && touch .env
-	docker-compose build
-	echo "SENTRY_SECRET_KEY=z7pq%@lw6ip_ef0+%=m=jr9w5&-q8k0gdds1@!sbb(3(^j6gcl" >> .env
-	docker-compose run --rm web upgrade
-	docker-compose up -d
+	$(COMPOSE) run --rm sentry upgrade --noinput &>/dev/null | true
+	$(COMPOSE) run --rm sentry createuser --email admin@example.com --password admin --superuser &>/dev/null | true
 
-remove-sentry:
-	docker-compose down
-	docker volume rm sentry-data
-	docker volume rm sentry-postgres
+.PHONY: clean
+clean:
+	$(REBAR) clean
+	$(COMPOSE) down --remove-orphans --volumes --rmi local
+	rm .env
 
+### ==================================================================
+### Development
+### ==================================================================
+
+.PHONY: compile
+compile:
+	$(REBAR) compile
+
+.PHONY: shell
+shell:
+	$(REBAR) shell
+
+.PHONY: coverage
 coverage:
-	rebar3 ct --cover
-	rebar3 eunit --cover
-	rebar3 cover -v
+	$(REBAR) ct --cover
+	$(REBAR) eunit --cover
+	$(REBAR) cover -v

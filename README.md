@@ -130,11 +130,13 @@ You can configure fingerprint from event metadata by key setting in config `even
 
 Installation
 
-    $ make install-sentry
+    $ make
 
 Clean-up
 
-    $ make remove-sentry
+    $ make clean
+
+Sentry available on http://localhost:9000 by account admin@example.com and password admin
 
 ## Use
 

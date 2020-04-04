@@ -4,10 +4,11 @@ matrix:
   include:
     - otp_release: 22.0.5
     - otp_release: 21.3.8
-    - otp_release: 21.2.7
 
 before_script:
-  - "chmod +x bootstrap_travis.sh"
-  - "./bootstrap_travis.sh"
+  - chmod +x bootstrap_travis.sh
+  - ./bootstrap_travis.sh
 script:
-  - "make coverage"
+  - rebar3 ct --cover
+  - rebar3 eunit --cover
+  - rebar3 cover -v
