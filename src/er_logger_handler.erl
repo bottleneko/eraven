@@ -3,10 +3,22 @@
 -define(MICROSECONDS_IN_SECONDS, 1000000).
 
 % Logger callbacks
--export([log/2, changing_config/3]).
+-export([log/2, adding_handler/1, changing_config/3]).
+
+% service
+-export([default_config/0]).
 
 -define(UNDEFINED_FUNCTION_REPLACEMENT, <<"Undefined report function">>).
 -define(WRONG_ARITY_REPLACEMENT, <<"Wrong report function arity">>).
+
+-define(DEFAULT_CONFIG, #{
+  event_extra_key => event_extra,
+  event_tags_key => event_tags,
+  fingerprint_key => fingerprint,
+  json_encode_function => fun jsx:encode/1,
+  report_depth => 20,
+  report_chars_limit => 4096
+}).
 
 %%%===================================================================
 %%% Logger callbacks
@@ -39,30 +51,45 @@ log(#{msg   := Message,
   Fingerprint = maps:get(FingerprintKey, Meta, [<<"{{ default }}">>]),
 
   Context = er_context:new(EnvironmentContext, RequestContext, Extra, UserContext, Tags, #{}, Fingerprint),
-  Event = build_event(format_message(Message, Meta), Level, Meta, Context),
+  Event = build_event(format_message(Message, Meta, Config), Level, Meta, Context),
   er_client:send_event(Event, Dsn, JsonEncodeFunction);
 log(LogEvent, HandlerConfig) ->
   io:format("Eraven log function clause.~nLogEvent: ~p~nHandlerConfig: ~p~n", [LogEvent, HandlerConfig]).
 
+adding_handler(Config) ->
+  Config2 = Config#{config => maps:merge(?DEFAULT_CONFIG, maps:get(config, Config, #{}))},
+  parse_dsn(Config2).
+
+changing_config(set, _OldConfig, NewConfig) ->
+  changing_config(update, ?DEFAULT_CONFIG, NewConfig);
 changing_config(update, OldConfig, NewConfig) ->
   OldParams = maps:get(config, OldConfig, #{}),
   NewParams = maps:get(config, NewConfig, #{}),
-  {ok, NewConfig#{config => maps:merge(OldParams, NewParams)}}.
+  Config = NewConfig#{config => maps:merge(OldParams, NewParams)},
+  parse_dsn(Config).
+
+%%%===================================================================
+%%% API
+%%%===================================================================
+
+-spec default_config() -> map().
+default_config() ->
+  ?DEFAULT_CONFIG.
 
 %%%===================================================================
 %%% Internal functions
 %%%===================================================================
 
-format_message({string, Message}, _Meta) ->
+format_message({string, Message}, _Meta, _Config) ->
   Message;
-format_message({report, Report}, Meta) ->
-  format_report(Report, Meta);
-format_message({Format, Data}, _Meta) ->
+format_message({report, Report}, Meta, Config) ->
+  format_report(Report, Meta, Config);
+format_message({Format, Data}, _Meta, _Config) ->
   Formatted = io_lib:format(Format, Data),
   iolist_to_binary(Formatted).
 
--spec format_report(Report :: map(), Meta :: map()) -> binary().
-format_report(Report, Meta) ->
+-spec format_report(Report :: map(), Meta :: map(), Config :: map()) -> binary().
+format_report(Report, Meta, #{report_depth := Depth, report_chars_limit := Limit} = _Config) ->
   Fun = fun logger:format_otp_report/1,
   case maps:get(report_cb, Meta, undefined) of
     undefined ->
@@ -80,13 +107,29 @@ format_report(Report, Meta) ->
       unicode:characters_to_binary(io_lib:format(Format, Arguments));
     ReportFun when is_function(ReportFun, 2) ->
       ReportFun(Report, #{
-        depth => 20,
-        chars_limit => 4096,
+        depth => Depth,
+        chars_limit => Limit,
         single_line => false}
       );
     _ReportFun ->
       ?WRONG_ARITY_REPLACEMENT
   end.
+
+-spec parse_dsn(Config :: map()) -> {ok, map()} | {error, binary()}.
+parse_dsn(#{config := #{dsn := DsnString}} = Config) ->
+  #{config := ConfigL2} = Config,
+  case er_dsn:new(DsnString) of
+    {ok, Dsn} ->
+      {ok, Config#{config => ConfigL2#{dsn => Dsn}}};
+    Reason ->
+      {error, Reason}
+  end;
+parse_dsn(#{config := _ConfigL2}) ->
+  Res = {error, <<"Missing required property `dsn`">>},
+  io:format("~p:~p ~p~n", [?MODULE, ?LINE, Res]),
+  Res;
+parse_dsn(Config) -> % no config at all - maybe will be set during runtime
+  {ok, Config}.
 
 -spec build_event(Message, Level, Metadata, Context) -> er_event:t() when
     Message  :: binary(),
