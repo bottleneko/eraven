@@ -45,7 +45,7 @@ log(#{msg   := Message,
   Tags = maps:merge(ProcessTags, EventTags),
 
   ProcessExtra = maps:get(eraven_process_extra, Meta, #{}),
-  EventExtra = maps:get(EventExtraKey, Meta, #{}),
+  EventExtra = event_extra(EventExtraKey, Meta),
   Extra = maps:merge(ProcessExtra, EventExtra),
 
   Fingerprint = maps:get(FingerprintKey, Meta, [<<"{{ default }}">>]),
@@ -55,6 +55,36 @@ log(#{msg   := Message,
   er_client:send_event(Event, Dsn, JsonEncodeFunction);
 log(LogEvent, HandlerConfig) ->
   io:format("Eraven log function clause.~nLogEvent: ~p~nHandlerConfig: ~p~n", [LogEvent, HandlerConfig]).
+
+event_extra(EventExtraKey, Meta) when
+    is_atom(EventExtraKey) ->
+  case maps:get(EventExtraKey, Meta, undefined) of
+    undefined ->
+      #{};
+    Value ->
+      #{EventExtraKey => Value}
+  end;
+event_extra(EventExtraList, Meta) when
+    is_list(EventExtraList) ->
+  event_extra({include_list, EventExtraList}, Meta);
+event_extra({include_list, EventExtraList}, Meta) when
+    is_list(EventExtraList) ->
+  Fun = fun(Key, Extra) ->
+    case maps:get(Key, Meta, undefined) of
+      undefined ->
+        Extra;
+      Value ->
+        Extra#{Key => Value}
+    end
+  end,
+  lists:foldl(Fun, #{}, EventExtraList);
+event_extra({exclude_list, EventExceptList}, Meta) when
+    is_list(EventExceptList) ->
+  maps:without(EventExceptList, Meta);
+event_extra({all}, Meta) ->
+    Meta;
+event_extra(_, _) ->
+    #{}.
 
 adding_handler(Config) ->
   Config2 = Config#{config => maps:merge(?DEFAULT_CONFIG, maps:get(config, Config, #{}))},

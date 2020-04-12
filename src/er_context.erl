@@ -54,7 +54,10 @@ request_context(#er_context{request_context = RequestContext}) ->
   RequestContext.
 
 extra(#er_context{extra = Extra}) ->
-  Extra.
+  Fun = fun(_K, V) ->
+    list_to_binary(io_lib:format("~p", [V]))
+  end,
+  maps:map(Fun, Extra).
 
 user_context(#er_context{user_context = UserContext}) ->
   UserContext.
