@@ -127,7 +127,14 @@ maybe_data_from_stacktrace(#er_event{stacktrace = [StacktraceLine | _RestStacktr
 
 format_stacktrace(Stacktrace) ->
   Map =
-    fun({Module, Function, ArgsOrArity, Location}) ->
+    fun({Module, Function, ArgsOrArity, []}) ->
+        Arity = arity_to_integer(ArgsOrArity),
+
+        #{function => format_mfa(Module, Function, Arity),
+          module   => Module,
+          vars     => parse_args(ArgsOrArity)
+         };
+    ({Module, Function, ArgsOrArity, Location}) ->
         Arity = arity_to_integer(ArgsOrArity),
 
         #{filename => to_binary(proplists:get_value(file, Location)),
