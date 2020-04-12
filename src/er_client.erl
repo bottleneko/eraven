@@ -24,11 +24,16 @@
 send_event(Event, Dsn, JsonEncodeFunction) ->
   Url = er_dsn:api_url(Dsn),
   Headers = authorization_headers(er_dsn:public_key(Dsn), er_dsn:secret_key(Dsn)),
-  Body = JsonEncodeFunction(er_event:to_map(Event)),
-  CompressedBody = base64:encode(zlib:compress(Body)),
-  Request = {Url, Headers, "application/octet-stream", CompressedBody},
-
-  httpc:request(post, Request, [], ?HTTPC_OPTIONS),
+  try
+    Body = JsonEncodeFunction(er_event:to_map(Event)),
+    CompressedBody = base64:encode(zlib:compress(Body)),
+    Request = {Url, Headers, "application/octet-stream", CompressedBody},
+  
+    httpc:request(post, Request, [], ?HTTPC_OPTIONS)
+  catch
+    _Type:Exception:Stacktrace ->
+      io:format("Eraven crash: ~p~n~p~n", [Exception, Stacktrace])
+  end,
   ok.
 
 %%%===================================================================

@@ -10,6 +10,9 @@
 
 -define(UNDEFINED_FUNCTION_REPLACEMENT, <<"Undefined report function">>).
 -define(WRONG_ARITY_REPLACEMENT, <<"Wrong report function arity">>).
+-define(CRASH_REPORT_SINGLE_NAME, <<"crash report">>).
+-define(SUPERVISOR_REPORT_SINGLE_NAME, <<"supervisor report">>).
+-define(GEN_SERVER_REPORT_SINGLE_NAME, <<"gen_server report">>).
 
 -define(DEFAULT_CONFIG, #{
   event_extra_key => event_extra,
@@ -34,31 +37,77 @@ log(#{msg   := Message,
                   fingerprint_key      := FingerprintKey
                  } = Config
      } = _HandlerConfig) ->
-  EnvironmentContext = maps:get(environment_context, Config, undefined),
+  Event = try
+    EnvironmentContext = maps:get(environment_context, Config, undefined),
 
-  RequestContext = maps:get(eraven_request_context, Meta, undefined),
+    RequestContext = maps:get(eraven_request_context, Meta, undefined),
 
-  UserContext = maps:get(eraven_user_context, Meta, undefined),
+    UserContext = maps:get(eraven_user_context, Meta, undefined),
 
-  ProcessTags = maps:get(eraven_process_tags, Meta, #{}),
-  EventTags = maps:get(EventTagsKey, Meta, #{}),
-  Tags = maps:merge(ProcessTags, EventTags),
+    ProcessTags = maps:get(eraven_process_tags, Meta, #{}),
+    EventTags = maps:get(EventTagsKey, Meta, #{}),
+    Tags = maps:merge(ProcessTags, EventTags),
 
-  ProcessExtra = maps:get(eraven_process_extra, Meta, #{}),
-  EventExtra = maps:get(EventExtraKey, Meta, #{}),
-  Extra = maps:merge(ProcessExtra, EventExtra),
+    {EventMessage, EventMeta} = format_message(Message, Meta, Config),
 
-  Fingerprint = maps:get(FingerprintKey, Meta, [<<"{{ default }}">>]),
+    ProcessExtra = maps:get(eraven_process_extra, EventMeta, #{}),
+    EventExtra = event_extra(EventExtraKey, EventMeta),
+    Extra = maps:merge(ProcessExtra, EventExtra),
 
-  Context = er_context:new(EnvironmentContext, RequestContext, Extra, UserContext, Tags, #{}, Fingerprint),
-  Event = build_event(format_message(Message, Meta, Config), Level, Meta, Context),
+    Fingerprint = maps:get(FingerprintKey, EventMeta, [<<"{{ default }}">>]),
+
+    Context = er_context:new(EnvironmentContext, RequestContext, Extra, UserContext, Tags, #{}, Fingerprint),
+    build_event(EventMessage, Level, EventMeta, Context)
+  catch
+    Type:Reason:Stacktrace ->
+      io:format("Eraven crash: ~p~n~p~n", [Reason, Stacktrace]),
+      MetaCrash = #{
+        time       => erlang:system_time(microsecond),
+        type       => Type,
+        reason     => Reason,
+        stacktrace => Stacktrace
+      },
+      ContextCrash = er_context:new(undefined, undefined, #{}, undefined, #{}, #{}, [<<"{{ default }}">>]),
+      build_event("Eraven crash", error, MetaCrash, ContextCrash)
+  end,
   er_client:send_event(Event, Dsn, JsonEncodeFunction);
 log(LogEvent, HandlerConfig) ->
   io:format("Eraven log function clause.~nLogEvent: ~p~nHandlerConfig: ~p~n", [LogEvent, HandlerConfig]).
 
+event_extra(EventExtraKey, Meta) when
+    is_atom(EventExtraKey) ->
+  case maps:get(EventExtraKey, Meta, undefined) of
+    undefined ->
+      #{};
+    Value ->
+      #{EventExtraKey => Value}
+  end;
+event_extra(EventExtraList, Meta) when
+    is_list(EventExtraList) ->
+  event_extra({include_list, EventExtraList}, Meta);
+event_extra({include_list, EventExtraList}, Meta) when
+    is_list(EventExtraList) ->
+  Fun = fun(Key, Extra) ->
+    case maps:get(Key, Meta, undefined) of
+      undefined ->
+        Extra;
+      Value ->
+        Extra#{Key => Value}
+    end
+  end,
+  lists:foldl(Fun, #{}, EventExtraList);
+event_extra({exclude_list, EventExceptList}, Meta) when
+    is_list(EventExceptList) ->
+  maps:without(EventExceptList, Meta);
+event_extra({all}, Meta) ->
+    Meta;
+event_extra(_, _) ->
+    #{}.
+
 adding_handler(Config) ->
   Config2 = Config#{config => maps:merge(?DEFAULT_CONFIG, maps:get(config, Config, #{}))},
-  parse_dsn(Config2).
+  Res = parse_dsn(Config2),
+  Res.
 
 changing_config(set, _OldConfig, NewConfig) ->
   changing_config(update, ?DEFAULT_CONFIG, NewConfig);
@@ -80,39 +129,61 @@ default_config() ->
 %%% Internal functions
 %%%===================================================================
 
-format_message({string, Message}, _Meta, _Config) ->
-  Message;
+-spec format_message(Message, Meta, Config) -> {EventMessage, EventMeta} when
+  Message      :: {string, string() | binary()} | {report, map()} | {string(), [term()]},
+  Meta         :: map(),
+  Config       :: map(),
+  EventMessage :: binary(),
+  EventMeta    :: map().
+format_message({string, Message}, Meta, _Config) ->
+  {Message, Meta};
 format_message({report, Report}, Meta, Config) ->
   format_report(Report, Meta, Config);
-format_message({Format, Data}, _Meta, _Config) ->
+format_message({Format, Data}, Meta, _Config) ->
   Formatted = io_lib:format(Format, Data),
-  iolist_to_binary(Formatted).
+  {iolist_to_binary(Formatted), Meta}.
 
--spec format_report(Report :: map(), Meta :: map(), Config :: map()) -> binary().
+-spec format_report(Report :: map(), Meta :: map(), Config :: map()) -> {binary(), map()}.
 format_report(Report, Meta, #{report_depth := Depth, report_chars_limit := Limit} = _Config) ->
   Fun = fun logger:format_otp_report/1,
   case maps:get(report_cb, Meta, undefined) of
     undefined ->
-      ?UNDEFINED_FUNCTION_REPLACEMENT;
+      {?UNDEFINED_FUNCTION_REPLACEMENT, Meta};
     Fun ->
       case Report of
+        #{report := _, label := {supervisor, child_terminated}} ->
+          {Format, Arguments} = Fun(Report),
+          Message = unicode:characters_to_binary(io_lib:format(Format, Arguments)),
+          {?SUPERVISOR_REPORT_SINGLE_NAME, Meta#{report => Message}};
         #{report := _, label := _} ->
           {Format, Arguments} = Fun(Report),
-          unicode:characters_to_binary(io_lib:format(Format, Arguments));
+          {unicode:characters_to_binary(io_lib:format(Format, Arguments)), Meta};
         _ ->
-          unicode:characters_to_binary(io_lib:format("~p", [Report]))
+          {unicode:characters_to_binary(io_lib:format("~p", [Report])), Meta}
       end;
     ReportFun when is_function(ReportFun, 1) ->
       {Format, Arguments} = ReportFun(Report),
-      unicode:characters_to_binary(io_lib:format(Format, Arguments));
+      Message = unicode:characters_to_binary(io_lib:format(Format, Arguments)),
+      case Report of
+        #{label := {gen_server,terminate}} ->
+          {?GEN_SERVER_REPORT_SINGLE_NAME, Meta#{report => Message}};
+        _ ->
+          {Message, Meta}
+      end;
     ReportFun when is_function(ReportFun, 2) ->
-      ReportFun(Report, #{
+      Message = ReportFun(Report, #{
         depth => Depth,
         chars_limit => Limit,
         single_line => false}
-      );
+      ),
+      case Report of
+        #{label := {proc_lib, crash}} ->
+          {?CRASH_REPORT_SINGLE_NAME, Meta#{report => Message}};
+        _ ->
+          {Message, Meta}
+      end;
     _ReportFun ->
-      ?WRONG_ARITY_REPLACEMENT
+      {?WRONG_ARITY_REPLACEMENT, Meta}
   end.
 
 -spec parse_dsn(Config :: map()) -> {ok, map()} | {error, binary()}.
