@@ -12,12 +12,12 @@
 -define(WRONG_ARITY_REPLACEMENT, <<"Wrong report function arity">>).
 
 -define(DEFAULT_CONFIG, #{
-  event_extra_key => event_extra,
-  event_tags_key => event_tags,
-  fingerprint_key => fingerprint,
+  event_extra_key      => event_extra,
+  event_tags_key       => event_tags,
+  fingerprint_key      => fingerprint,
   json_encode_function => fun jsx:encode/1,
-  report_depth => 20,
-  report_chars_limit => 4096
+  report_depth         => 20,
+  report_chars_limit   => 4096
 }).
 
 %%%===================================================================
@@ -131,11 +131,10 @@ format_report(Report, Meta, #{report_depth := Depth, report_chars_limit := Limit
       {Format, Arguments} = ReportFun(Report),
       unicode:characters_to_binary(io_lib:format(Format, Arguments));
     ReportFun when is_function(ReportFun, 2) ->
-      ReportFun(Report, #{
-        depth => Depth,
-        chars_limit => Limit,
-        single_line => false}
-      );
+      ReportFun(Report, #{depth       => Depth,
+                          chars_limit => Limit,
+                          single_line => false
+                         });
     _ReportFun ->
       ?WRONG_ARITY_REPLACEMENT
   end.
