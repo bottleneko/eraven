@@ -5,20 +5,8 @@
 % Logger callbacks
 -export([log/2, adding_handler/1, changing_config/3]).
 
-% service
--export([default_config/0]).
-
 -define(UNDEFINED_FUNCTION_REPLACEMENT, <<"Undefined report function">>).
 -define(WRONG_ARITY_REPLACEMENT, <<"Wrong report function arity">>).
-
--define(DEFAULT_CONFIG, #{
-  event_extra_key      => event_extra,
-  event_tags_key       => event_tags,
-  fingerprint_key      => fingerprint,
-  json_encode_function => fun jsx:encode/1,
-  report_depth         => 20,
-  report_chars_limit   => 4096
-}).
 
 %%%===================================================================
 %%% Logger callbacks
@@ -37,7 +25,7 @@ log(#{msg   := Message,
                   fingerprint_key      := FingerprintKey
                  } = Config
      } = _HandlerConfig) ->
-  EnvironmentContext = maps:get(environment_context, Config, undefined),
+  EnvironmentContext = maps:get(environment_context, Config),
 
   RequestContext = maps:get(eraven_request_context, Meta, undefined),
 
@@ -68,42 +56,52 @@ log(LogEvent, HandlerConfig) ->
             "LogEvent: ~p~n"
             "HandlerConfig: ~p~n", [LogEvent, HandlerConfig]).
 
--spec adding_handler(Config) -> {ok, NewConfig} | {error, Reason} when
-    Config    :: logger:handler_config(),
-    NewConfig :: logger:handler_config(),
-    Reason    :: binary().
-adding_handler(Config) ->
-  Config2 = Config#{config => maps:merge(?DEFAULT_CONFIG, maps:get(config, Config, #{}))},
-  parse_dsn(Config2).
+-spec adding_handler(HandlerConfig) -> {ok, NewHandlerConfig} | {error, Reason} when
+    HandlerConfig    :: logger:handler_config(),
+    NewHandlerConfig :: logger:handler_config(),
+    Reason           :: binary().
+adding_handler(HandlerConfig) ->
+  RawConfig = maps:get(config, HandlerConfig, #{}),
+  case er_config:new(RawConfig) of
+    {ok, Config} ->
+      {ok, HandlerConfig#{config => Config}};
+    {error, _Reason} = Error ->
+      Error
+  end.
 
--spec changing_config(SetOrUpdate, OldConfig, NewConfig) -> {ok, Config} | {error, Reason} when
-    SetOrUpdate :: set | update,
-    OldConfig   :: logger:handler_config(),
-    NewConfig   :: logger:handler_config(),
-    Config      :: logger:handler_config(),
-    Reason      :: binary().
-changing_config(set, _OldConfig, NewConfig) ->
-  changing_config(update, #{config => default_config()}, NewConfig);
-changing_config(update, OldConfig, NewConfig) ->
-  OldParams = maps:get(config, OldConfig, #{}),
-  NewParams = maps:get(config, NewConfig, #{}),
-  Config = NewConfig#{config => maps:merge(OldParams, NewParams)},
-  parse_dsn(Config).
-
-%%%===================================================================
-%%% API
-%%%===================================================================
-
--spec default_config() -> map().
-default_config() ->
-  ?DEFAULT_CONFIG.
+-spec changing_config(SetOrUpdate, OldHandlerConfig, NewHandlerConfig) -> Result when
+    SetOrUpdate      :: set | update,
+    OldHandlerConfig :: logger:handler_config(),
+    NewHandlerConfig :: logger:handler_config(),
+    Result           :: {ok, Config}
+                      | {error, Reason},
+    Config           :: logger:handler_config(),
+    Reason           :: binary().
+changing_config(set, OldHandlerConfig, NewHandlerConfig) ->
+  changing_config(update, OldHandlerConfig#{config => #{}}, NewHandlerConfig);
+changing_config(update, OldHandlerConfig, NewHandlerConfig) ->
+  OldRawConfig = maps:get(config, OldHandlerConfig, #{}),
+  NewRawConfig = maps:get(config, NewHandlerConfig, #{}),
+  RawConfig = maps:merge(OldRawConfig, NewRawConfig),
+  case er_config:new(RawConfig) of
+    {ok, Config} ->
+      {ok, NewHandlerConfig#{config => Config}};
+    {error, _Reason} = Error ->
+      Error
+  end.
 
 %%%===================================================================
 %%% Internal functions
 %%%===================================================================
 
-format_message({string, Message}, _Meta, _Config) ->
-  Message;
+-spec format_message(Message, Meta, Config) -> binary() when
+    Message :: {string, unicode:chardata()}
+             | {report, logger:report()}
+             | {io:format(), [term()]},
+    Meta    :: logger:metadata(),
+    Config  :: er_config:t().
+format_message({string, String}, _Meta, _Config) ->
+  String;
 format_message({report, Report}, Meta, Config) ->
   format_report(Report, Meta, Config);
 format_message({Format, Data}, _Meta, _Config) ->
@@ -113,7 +111,7 @@ format_message({Format, Data}, _Meta, _Config) ->
 -spec format_report(Report, Meta, Config) -> binary() when
     Report :: logger:report(),
     Meta   :: logger:metadata(),
-    Config :: map().
+    Config :: er_config:t().
 format_report(Report, Meta, #{report_depth := Depth, report_chars_limit := Limit} = _Config) ->
   Fun = fun logger:format_otp_report/1,
   case maps:get(report_cb, Meta, undefined) of
@@ -138,22 +136,6 @@ format_report(Report, Meta, #{report_depth := Depth, report_chars_limit := Limit
     _ReportFun ->
       ?WRONG_ARITY_REPLACEMENT
   end.
-
--spec parse_dsn(HandlerConfig) -> {ok, NewHandlerConfig} | {error, Reason} when
-    HandlerConfig    :: logger:handler_config(),
-    NewHandlerConfig :: logger:handler_config(),
-    Reason           :: binary().
-parse_dsn(#{config := #{dsn := DsnString} = ConfigL2} = Config) ->
-  case er_dsn:new(DsnString) of
-    {ok, Dsn} ->
-      {ok, Config#{config => ConfigL2#{dsn => Dsn}}};
-    Reason ->
-      {error, Reason}
-  end;
-parse_dsn(#{config := _ConfigL2}) ->
-  Res = {error, <<"Missing required property `dsn`">>},
-  io:format("~p:~p ~p~n", [?MODULE, ?LINE, Res]),
-  Res.
 
 -spec build_event(Message, Level, Metadata, Context) -> er_event:t() when
     Message  :: binary(),

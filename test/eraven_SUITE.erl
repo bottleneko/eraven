@@ -11,8 +11,7 @@
 %%%===================================================================
 
 all() ->
-  [default_config,
-   set_environment_context,
+  [set_environment_context,
    set_process_extra,
    set_user_context,
    set_process_tags,
@@ -34,21 +33,6 @@ end_per_testcase(_Testcase, Config) ->
 %%%===================================================================
 %%% Testcases
 %%%===================================================================
-default_config(_Config) ->
-  {ok, Dsn} = er_dsn:new(?TEST_DSN),
-  Expected = maps:merge(er_logger_handler:default_config(), #{dsn => Dsn}),
-
-  ct:pal("Check default config with string type dsn"),
-  logger:add_handler(eraven, er_logger_handler, #{config => #{dsn => ?TEST_DSN}}),
-  {ok, #{config := Config}} = logger:get_handler_config(eraven),
-  ?assertEqual(Expected, Config),
-  logger:remove_handler(eraven),
-
-  ct:pal("Check default config with er_dsn:t() dsn"),
-  logger:add_handler(eraven, er_logger_handler, #{config => #{dsn => Dsn}}),
-  {ok, #{config := Config2}} = logger:get_handler_config(eraven),
-  ?assertEqual(Expected, Config2),
-  logger:remove_handler(eraven).
 
 set_environment_context(_Config) ->
   ServerName = <<"test_server">>,
