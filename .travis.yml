@@ -9,7 +9,5 @@ before_script:
   - chmod +x bootstrap_travis.sh
   - ./bootstrap_travis.sh
 script:
-  - rebar3 ct --cover
-  - rebar3 eunit --cover
-  - rebar3 cover -v
+  - rebar3 do eunit, ct, cover -v
   - rebar3 lint

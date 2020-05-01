@@ -1,0 +1,12 @@
+version: 2.1
+jobs:
+  build:
+    docker:
+      - image: circleci/erlang:22.3.3
+    steps:
+      - checkout
+      - run: mkdir -p _build/test/test-results/{eunit,ct}
+      - run: rebar3 do eunit, ct, cover -v
+      - store_test_results:
+          path: _build/test/test-results
+      - run: rebar3 as test coveralls send
