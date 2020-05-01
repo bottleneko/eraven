@@ -15,17 +15,25 @@ all() ->
    set_process_extra,
    set_user_context,
    set_process_tags,
-   set_request_context
+   set_request_context,
+
+   log_error_test,
+   update_configuration_test,
+   add_handler_error_test
   ].
 
-init_per_testcase(set_environment_context, Config) ->
-  logger:add_handler(eraven, er_logger_handler, #{config => #{dsn => ?TEST_DSN}}),
+init_per_testcase(TestCase, Config) when
+    TestCase =:= set_environment_context;
+    TestCase =:= update_configuration_test ->
+  ok = logger:add_handler(eraven, er_logger_handler, #{config => #{dsn => ?TEST_DSN}}),
   Config;
 init_per_testcase(_Testcase, Config) ->
   Config.
 
-end_per_testcase(set_environment_context, Config) ->
-  logger:remove_handler(eraven),
+end_per_testcase(TestCase, Config) when
+    TestCase =:= set_environment_context;
+    TestCase =:= update_configuration_test ->
+  ok = logger:remove_handler(eraven),
   Config;
 end_per_testcase(_Testcase, Config) ->
   Config.
@@ -90,3 +98,19 @@ set_request_context(_Config) ->
 
   RequestContext = er_request_context:new(Method, Url, Headers, Env, Data),
   ?assertMatch(#{eraven_request_context := RequestContext}, logger:get_process_metadata()).
+
+log_error_test(_Config) ->
+  ?assertEqual(ok, er_logger_handler:log(test, #{})).
+
+update_configuration_test(_Config) ->
+  {ok, Config} = logger:get_handler_config(eraven),
+
+  ?assertEqual(ok, logger:update_handler_config(eraven, #{config => #{dsn => ?TEST_DSN}})),
+  ?assertEqual({ok, Config}, logger:get_handler_config(eraven)),
+
+  ?assertEqual({error, <<"Missing required property `dsn`">>},
+               logger:set_handler_config(eraven, #{config => #{}})).
+
+add_handler_error_test(_Config) ->
+  ?assertEqual({error, {handler_not_added, <<"Missing required property `dsn`">>}},
+               logger:add_handler(eraven, er_logger_handler, #{config => #{}})).
