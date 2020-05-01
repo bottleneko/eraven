@@ -4,12 +4,16 @@
                    message                 :: binary(),
                    level                   :: fatal | error | warning | info | debug,
                    platform = <<"erlang">> :: binary(),
-                   exception               :: #{type => error | throw, value => Reason :: term()} | undefined,
-                   stacktrace              :: term()            | undefined,
+                   exception               :: #{type  => error | throw,
+                                                value => Reason :: term()}
+                                            | undefined,
+                   stacktrace              :: term()
+                                            | undefined,
                    context                 :: term(),
-                   module                  :: atom()            | undefined,
-                   line                    :: non_neg_integer() | undefined
-%                   modules             :: [atom()]
+                   module                  :: atom()
+                                            | undefined,
+                   line                    :: non_neg_integer()
+                                            | undefined
                   }).
 
 -opaque t() :: #er_event{}.
@@ -117,8 +121,8 @@ maybe_data_from_stacktrace(#er_event{stacktrace = Stacktrace} = _Event, Map) whe
     Stacktrace =:= undefined;
     Stacktrace =:= [] ->
   Map;
-maybe_data_from_stacktrace(#er_event{stacktrace = [StacktraceLine | _RestStacktrace] = Stacktrace} = Event, Map) ->
-  {Module, Function, ArgsOrArity, _Location} = StacktraceLine,
+maybe_data_from_stacktrace(#er_event{stacktrace = Stacktrace} = Event, Map) ->
+  {Module, Function, ArgsOrArity, _Location} = hd(Stacktrace),
   Culprit = format_mfa(Module, Function, arity_to_integer(ArgsOrArity)),
   Map#{culprit     => Culprit,
     exception   => Event#er_event.exception,

@@ -50,11 +50,20 @@ log(#{msg   := Message,
 
   Fingerprint = maps:get(FingerprintKey, Meta, [<<"{{ default }}">>]),
 
-  Context = er_context:new(EnvironmentContext, RequestContext, Extra, UserContext, Tags, #{}, Fingerprint),
+  Context = er_context:new(EnvironmentContext,
+                           RequestContext,
+                           Extra,
+                           UserContext,
+                           Tags,
+                           _Breadcrumbs = #{},
+                           Fingerprint),
+
   Event = build_event(format_message(Message, Meta, Config), Level, Meta, Context),
   er_client:send_event(Event, Dsn, JsonEncodeFunction);
 log(LogEvent, HandlerConfig) ->
-  io:format("Eraven log function clause.~nLogEvent: ~p~nHandlerConfig: ~p~n", [LogEvent, HandlerConfig]).
+  io:format("Eraven log function clause.~n"
+            "LogEvent: ~p~n"
+            "HandlerConfig: ~p~n", [LogEvent, HandlerConfig]).
 
 adding_handler(Config) ->
   Config2 = Config#{config => maps:merge(?DEFAULT_CONFIG, maps:get(config, Config, #{}))},
@@ -136,9 +145,26 @@ parse_dsn(Config) -> % no config at all - maybe will be set during runtime
     Level    :: logger:level(),
     Metadata :: map(),
     Context  :: er_context:t().
-build_event(Message, Level, #{type := Type, reason := Reason, stacktrace := Stacktrace, time := Timestamp} = _Meta, Context) ->
-  er_event:new(Message, Level, Type, Reason, Stacktrace, Context, Timestamp div ?MICROSECONDS_IN_SECONDS);
-build_event(Message, Level, #{mfa := {Module, _Function, _Arity}, line := Line, time := Timestamp} = _Meta, Context) ->
-  er_event:new(Message, Level, Module, Line, Context, Timestamp div ?MICROSECONDS_IN_SECONDS);
-build_event(Message, Level, #{time := Timestamp} = _Meta, Context) ->
-  er_event:new(Message, Level, Context, Timestamp div ?MICROSECONDS_IN_SECONDS).
+build_event(Message,
+            Level,
+            #{type       := Type,
+              reason     := Reason,
+              stacktrace := Stacktrace,
+              time       := TimestampUs} = _Meta,
+            Context) ->
+  Timestamp = TimestampUs div ?MICROSECONDS_IN_SECONDS,
+  er_event:new(Message, Level, Type, Reason, Stacktrace, Context, Timestamp);
+build_event(Message,
+            Level,
+            #{mfa  := {Module, _Function, _Arity},
+              line := Line,
+              time := TimestampUs} = _Meta,
+            Context) ->
+  Timestamp = TimestampUs div ?MICROSECONDS_IN_SECONDS,
+  er_event:new(Message, Level, Module, Line, Context, Timestamp);
+build_event(Message,
+            Level,
+            #{time := TimestampUs} = _Meta,
+            Context) ->
+  Timestamp = TimestampUs div ?MICROSECONDS_IN_SECONDS,
+  er_event:new(Message, Level, Context, Timestamp).

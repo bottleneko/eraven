@@ -1,13 +1,21 @@
 -module(eraven).
 
 % API
--export([set_environment_context/4, set_process_extra/1, set_user_context/1, set_process_tags/1, set_request_context/5]).
+-export([set_environment_context/4,
+         set_process_extra/1,
+         set_user_context/1,
+         set_process_tags/1,
+         set_request_context/5
+        ]).
 
 %%====================================================================
 %% API functions
 %%====================================================================
 
--spec set_environment_context(HandlerId, ServerName, Environment, Release) -> ok | {error, term()} when
+-spec set_environment_context(HandlerId,
+                              ServerName,
+                              Environment,
+                              Release) -> ok | {error, term()} when
     HandlerId   :: logger:handler_id(),
     ServerName  :: string() | binary(),
     Environment :: string() | binary(),

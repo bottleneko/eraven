@@ -120,7 +120,10 @@ exception_test(_Config) ->
                 }, bookish_spork_request:headers(Request)).
 
 exception_old_dsn_test(_Config) ->
-  {ok, Dsn} = er_dsn:new("http://9f293de25b2c4a74b09ae731ba6aac58:3c30a3ae29b440079ba31bbce62c34bb@localhost:9090/1"),
+  {ok, Dsn} = er_dsn:new("http://"
+                         "9f293de25b2c4a74b09ae731ba6aac58"
+                         ":3c30a3ae29b440079ba31bbce62c34bb"
+                         "@localhost:9090/1"),
   Config =
     #{config => #{dsn                  => Dsn,
                   json_encode_function => fun jsx:encode/1,

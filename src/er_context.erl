@@ -24,7 +24,13 @@
 %%% API
 %%%===================================================================
 
--spec new(EnvironmentContext, RequestContext, Extra, UserContext, Tags, Breadcrumbs, Fingerprint) -> t() when
+-spec new(EnvironmentContext,
+          RequestContext,
+          Extra,
+          UserContext,
+          Tags,
+          Breadcrumbs,
+          Fingerprint) -> t() when
     EnvironmentContext :: er_environment_context:t(),
     RequestContext     :: er_request_context:t(),
     Extra              :: map(),

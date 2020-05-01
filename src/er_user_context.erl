@@ -26,19 +26,19 @@
     UserName           :: binary(),
     Email              :: binary(),
     IpAddress          :: inet:ip_address().
-new(UserData) ->
-  Filtered = maps:with([id, username, email, ip_address], UserData),
-  Size = maps:size(Filtered),
-  if Size > 0 ->
-      #er_user_context{
-         id         = maps:get(id, Filtered, undefined),
-         username   = maps:get(username, Filtered, undefined),
-         email      = maps:get(email, Filtered, undefined),
-         ip_address = maps:get(ip_address, Filtered, undefined)
-        };
-    true ->
-      undefined
-  end.
+new(UserData) when
+    is_map_key(id, UserData);
+    is_map_key(username, UserData);
+    is_map_key(email, UserData);
+    is_map_key(ip_address, UserData) ->
+  #er_user_context{
+     id         = maps:get(id, UserData, undefined),
+     username   = maps:get(username, UserData, undefined),
+     email      = maps:get(email, UserData, undefined),
+     ip_address = maps:get(ip_address, UserData, undefined)
+    };
+new(_UserData) ->
+  undefined.
 
 -spec to_map(UserContext) -> map() when
     UserContext :: t().

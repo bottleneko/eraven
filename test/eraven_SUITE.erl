@@ -43,7 +43,7 @@ default_config(_Config) ->
   {ok, #{config := Config}} = logger:get_handler_config(eraven),
   ?assertEqual(Expected, Config),
   logger:remove_handler(eraven),
-  
+
   ct:pal("Check default config with er_dsn:t() dsn"),
   logger:add_handler(eraven, er_logger_handler, #{config => #{dsn => Dsn}}),
   {ok, #{config := Config2}} = logger:get_handler_config(eraven),
@@ -74,7 +74,10 @@ set_user_context(_Config) ->
   Email = <<"test_email@example.com">>,
   IpAddress = {8, 8, 8, 8},
 
-  UserData = #{id => InternalIdentifier, username => UserName, email => Email, ip_address => IpAddress},
+  UserData = #{id         => InternalIdentifier,
+               username   => UserName,
+               email      => Email,
+               ip_address => IpAddress},
 
   eraven:set_user_context(UserData),
 

@@ -1,6 +1,14 @@
 -module(er_request_context).
 
--record(er_request_context, {method       :: 'GET' | 'HEAD' | 'POST' | 'PUT' | 'DELETE' | 'CONNECT' | 'OPTIONS' | 'TRACE', % https://tools.ietf.org/html/rfc7231
+-record(er_request_context, {% https://tools.ietf.org/html/rfc7231
+                             method       :: 'GET'
+                                           | 'HEAD'
+                                           | 'POST'
+                                           | 'PUT'
+                                           | 'DELETE'
+                                           | 'CONNECT'
+                                           | 'OPTIONS'
+                                           | 'TRACE',
                              url          :: binary(),
                              headers      :: #{binary() => binary()},
                              env          :: #{binary() => binary()},
@@ -26,7 +34,11 @@ new(Method, Url, Headers, Env, Data) ->
      data         = Data
     }.
 
-to_map(#er_request_context{method = Method, url = Url, headers = Headers, env = Env, data = Data}) ->
+to_map(#er_request_context{method  = Method,
+                           url     = Url,
+                           headers = Headers,
+                           env     = Env,
+                           data    = Data}) ->
   SerializedHeaders = lists:map(fun tuple_to_list/1, maps:to_list(Headers)),
   #{method                => Method,
     url                   => Url,
