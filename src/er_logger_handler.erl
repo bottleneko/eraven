@@ -24,6 +24,9 @@
 %%% Logger callbacks
 %%%===================================================================
 
+-spec log(LogEvent, HandlerConfig) -> any() when
+    LogEvent      :: logger:log_event(),
+    HandlerConfig :: logger:handler_config().
 log(#{msg   := Message,
       level := Level,
       meta  := Meta} = _LogEvent,
@@ -65,12 +68,22 @@ log(LogEvent, HandlerConfig) ->
             "LogEvent: ~p~n"
             "HandlerConfig: ~p~n", [LogEvent, HandlerConfig]).
 
+-spec adding_handler(Config) -> {ok, NewConfig} | {error, Reason} when
+    Config    :: logger:handler_config(),
+    NewConfig :: logger:handler_config(),
+    Reason    :: binary().
 adding_handler(Config) ->
   Config2 = Config#{config => maps:merge(?DEFAULT_CONFIG, maps:get(config, Config, #{}))},
   parse_dsn(Config2).
 
+-spec changing_config(SetOrUpdate, OldConfig, NewConfig) -> {ok, Config} | {error, Reason} when
+    SetOrUpdate :: set | update,
+    OldConfig   :: logger:handler_config(),
+    NewConfig   :: logger:handler_config(),
+    Config      :: logger:handler_config(),
+    Reason      :: binary().
 changing_config(set, _OldConfig, NewConfig) ->
-  changing_config(update, ?DEFAULT_CONFIG, NewConfig);
+  changing_config(update, #{config => default_config()}, NewConfig);
 changing_config(update, OldConfig, NewConfig) ->
   OldParams = maps:get(config, OldConfig, #{}),
   NewParams = maps:get(config, NewConfig, #{}),
@@ -97,7 +110,10 @@ format_message({Format, Data}, _Meta, _Config) ->
   Formatted = io_lib:format(Format, Data),
   iolist_to_binary(Formatted).
 
--spec format_report(Report :: map(), Meta :: map(), Config :: map()) -> binary().
+-spec format_report(Report, Meta, Config) -> binary() when
+    Report :: logger:report(),
+    Meta   :: logger:metadata(),
+    Config :: map().
 format_report(Report, Meta, #{report_depth := Depth, report_chars_limit := Limit} = _Config) ->
   Fun = fun logger:format_otp_report/1,
   case maps:get(report_cb, Meta, undefined) of
@@ -124,9 +140,11 @@ format_report(Report, Meta, #{report_depth := Depth, report_chars_limit := Limit
       ?WRONG_ARITY_REPLACEMENT
   end.
 
--spec parse_dsn(Config :: map()) -> {ok, map()} | {error, binary()}.
-parse_dsn(#{config := #{dsn := DsnString}} = Config) ->
-  #{config := ConfigL2} = Config,
+-spec parse_dsn(HandlerConfig) -> {ok, NewHandlerConfig} | {error, Reason} when
+    HandlerConfig    :: logger:handler_config(),
+    NewHandlerConfig :: logger:handler_config(),
+    Reason           :: binary().
+parse_dsn(#{config := #{dsn := DsnString} = ConfigL2} = Config) ->
   case er_dsn:new(DsnString) of
     {ok, Dsn} ->
       {ok, Config#{config => ConfigL2#{dsn => Dsn}}};
@@ -136,14 +154,12 @@ parse_dsn(#{config := #{dsn := DsnString}} = Config) ->
 parse_dsn(#{config := _ConfigL2}) ->
   Res = {error, <<"Missing required property `dsn`">>},
   io:format("~p:~p ~p~n", [?MODULE, ?LINE, Res]),
-  Res;
-parse_dsn(Config) -> % no config at all - maybe will be set during runtime
-  {ok, Config}.
+  Res.
 
 -spec build_event(Message, Level, Metadata, Context) -> er_event:t() when
     Message  :: binary(),
     Level    :: logger:level(),
-    Metadata :: map(),
+    Metadata :: logger:metadata(),
     Context  :: er_context:t().
 build_event(Message,
             Level,
