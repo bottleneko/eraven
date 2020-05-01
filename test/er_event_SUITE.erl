@@ -44,15 +44,7 @@ end_per_testcase(_Testcase, Config) ->
 
 exception_with_stacktrace_test(_Config) ->
   {ok, Dsn} = er_dsn:new("http://9f293de25b2c4a74b09ae731ba6aac58@localhost:9090/1"),
-  Config =
-    #{config => #{dsn                  => Dsn,
-                  json_encode_function => fun jsx:encode/1,
-                  event_tags_key       => event_tags,
-                  event_extra_key      => event_extra,
-                  fingerprint_key      => fingerprint
-                 },
-      level  => all
-     },
+  Config = #{config => #{dsn => Dsn}, level  => all},
   logger:add_handler(eraven, er_logger_handler, Config),
 
   try
@@ -63,124 +55,51 @@ exception_with_stacktrace_test(_Config) ->
   end,
 
   {ok, Request} = bookish_spork:capture_request(),
-  ?assertEqual('POST', bookish_spork_request:method(Request)),
-  ?assertEqual("/api/1/store/", bookish_spork_request:uri(Request)),
-  ?assertMatch(#{"connection"     := "keep-alive",
-                 "content-length" := _ContentLength,
-                 "content-type"   := "application/octet-stream",
-                 "host"           := "localhost:9090",
-                 "user-agent"     := "eraven/0.1.0",
-                 "x-sentry-auth"  := _XSentryAuth
-                }, bookish_spork_request:headers(Request)).
+  ok = check_api_requirements(Request).
 
 exception_with_location_test(_Config) ->
   {ok, Dsn} = er_dsn:new("http://9f293de25b2c4a74b09ae731ba6aac58@localhost:9090/1"),
-  Config =
-    #{config => #{dsn                  => Dsn,
-                  json_encode_function => fun jsx:encode/1,
-                  event_tags_key       => event_tags,
-                  event_extra_key      => event_extra,
-                  fingerprint_key      => fingerprint
-                 },
-      level  => all
-     },
+  Config = #{config => #{dsn => Dsn}, level  => all},
   logger:add_handler(eraven, er_logger_handler, Config),
 
   ?LOG_ERROR("Test event", []),
 
   {ok, Request} = bookish_spork:capture_request(),
-  ?assertEqual('POST', bookish_spork_request:method(Request)),
-  ?assertEqual("/api/1/store/", bookish_spork_request:uri(Request)),
-  ?assertMatch(#{"connection"     := "keep-alive",
-                 "content-length" := _ContentLength,
-                 "content-type"   := "application/octet-stream",
-                 "host"           := "localhost:9090",
-                 "user-agent"     := "eraven/0.1.0",
-                 "x-sentry-auth"  := _XSentryAuth
-                }, bookish_spork_request:headers(Request)).
-
+  ok = check_api_requirements(Request).
 
 exception_test(_Config) ->
   {ok, Dsn} = er_dsn:new("http://9f293de25b2c4a74b09ae731ba6aac58@localhost:9090/1"),
-  Config =
-    #{config => #{dsn                  => Dsn,
-                  json_encode_function => fun jsx:encode/1,
-                  event_tags_key       => event_tags,
-                  event_extra_key      => event_extra,
-                  fingerprint_key      => fingerprint
-                 },
-      level  => all
-     },
+  Config = #{config => #{dsn => Dsn}, level  => all},
   logger:add_handler(eraven, er_logger_handler, Config),
 
   logger:error("Test event", []),
 
   {ok, Request} = bookish_spork:capture_request(),
-  ?assertEqual('POST', bookish_spork_request:method(Request)),
-  ?assertEqual("/api/1/store/", bookish_spork_request:uri(Request)),
-  ?assertMatch(#{"connection"     := "keep-alive",
-                 "content-length" := _ContentLength,
-                 "content-type"   := "application/octet-stream",
-                 "host"           := "localhost:9090",
-                 "user-agent"     := "eraven/0.1.0",
-                 "x-sentry-auth"  := _XSentryAuth
-                }, bookish_spork_request:headers(Request)).
+  ok = check_api_requirements(Request).
 
 exception_old_dsn_test(_Config) ->
   {ok, Dsn} = er_dsn:new("http://"
                          "9f293de25b2c4a74b09ae731ba6aac58"
                          ":3c30a3ae29b440079ba31bbce62c34bb"
                          "@localhost:9090/1"),
-  Config =
-    #{config => #{dsn                  => Dsn,
-                  json_encode_function => fun jsx:encode/1,
-                  event_tags_key       => event_tags,
-                  event_extra_key      => event_extra,
-                  fingerprint_key      => fingerprint
-                 },
-      level  => all
-     },
+  Config = #{config => #{dsn => Dsn}, level  => all},
   logger:add_handler(eraven, er_logger_handler, Config),
 
   logger:error("Test event"),
 
   {ok, Request} = bookish_spork:capture_request(),
-  ?assertEqual('POST', bookish_spork_request:method(Request)),
-  ?assertEqual("/api/1/store/", bookish_spork_request:uri(Request)),
-  ?assertMatch(#{"connection"     := "keep-alive",
-                 "content-length" := _ContentLength,
-                 "content-type"   := "application/octet-stream",
-                 "host"           := "localhost:9090",
-                 "user-agent"     := "eraven/0.1.0",
-                 "x-sentry-auth"  := _XSentryAuth
-                }, bookish_spork_request:headers(Request)).
+  ok = check_api_requirements(Request).
 
 report_test(_Config) ->
   {ok, Dsn} = er_dsn:new("http://9f293de25b2c4a74b09ae731ba6aac58@localhost:9090/1"),
-  Config =
-    #{config => #{dsn                  => Dsn,
-                  json_encode_function => fun jsx:encode/1,
-                  event_tags_key       => event_tags,
-                  event_extra_key      => event_extra,
-                  fingerprint_key      => fingerprint
-                 },
-      level  => all
-     },
+  Config = #{config => #{dsn => Dsn}, level  => all},
   logger:add_handler(eraven, er_logger_handler, Config),
 
   logger:error(#{got => connection_request, id => 42, state => foo},
                #{report_cb => fun(R) -> {"~p", [R]} end}),
 
   {ok, Request} = bookish_spork:capture_request(),
-  ?assertEqual('POST', bookish_spork_request:method(Request)),
-  ?assertEqual("/api/1/store/", bookish_spork_request:uri(Request)),
-  ?assertMatch(#{"connection"     := "keep-alive",
-                 "content-length" := _ContentLength,
-                 "content-type"   := "application/octet-stream",
-                 "host"           := "localhost:9090",
-                 "user-agent"     := "eraven/0.1.0",
-                 "x-sentry-auth"  := _XSentryAuth
-                }, bookish_spork_request:headers(Request)),
+  ok = check_api_requirements(Request),
 
   Body = decode(bookish_spork_request:body(Request)),
 
@@ -188,30 +107,14 @@ report_test(_Config) ->
 
 report_with_params_test(_Config) ->
   {ok, Dsn} = er_dsn:new("http://9f293de25b2c4a74b09ae731ba6aac58@localhost:9090/1"),
-  Config =
-    #{config => #{dsn                  => Dsn,
-                  json_encode_function => fun jsx:encode/1,
-                  event_tags_key       => event_tags,
-                  event_extra_key      => event_extra,
-                  fingerprint_key      => fingerprint
-                 },
-      level  => all
-     },
+  Config = #{config => #{dsn => Dsn}, level  => all},
   logger:add_handler(eraven, er_logger_handler, Config),
 
   logger:error(#{got => connection_request, id => 42, state => foo},
                #{report_cb => fun(R, _Params) -> io_lib:format("~p", [R]) end}),
 
   {ok, Request} = bookish_spork:capture_request(),
-  ?assertEqual('POST', bookish_spork_request:method(Request)),
-  ?assertEqual("/api/1/store/", bookish_spork_request:uri(Request)),
-  ?assertMatch(#{"connection"     := "keep-alive",
-                 "content-length" := _ContentLength,
-                 "content-type"   := "application/octet-stream",
-                 "host"           := "localhost:9090",
-                 "user-agent"     := "eraven/0.1.0",
-                 "x-sentry-auth"  := _XSentryAuth
-                }, bookish_spork_request:headers(Request)),
+  ok = check_api_requirements(Request),
 
   Body = decode(bookish_spork_request:body(Request)),
 
@@ -219,30 +122,14 @@ report_with_params_test(_Config) ->
 
 report_otp_test(_Config) ->
   {ok, Dsn} = er_dsn:new("http://9f293de25b2c4a74b09ae731ba6aac58@localhost:9090/1"),
-  Config =
-    #{config => #{dsn                  => Dsn,
-                  json_encode_function => fun jsx:encode/1,
-                  event_tags_key       => event_tags,
-                  event_extra_key      => event_extra,
-                  fingerprint_key      => fingerprint
-                 },
-      level     => all
-     },
+  Config = #{config => #{dsn => Dsn}, level  => all},
   logger:add_handler(eraven, er_logger_handler, Config),
 
   logger:error(#{got => connection_request, id => 42, state => foo},
                #{report_cb => fun logger:format_otp_report/1}),
 
   {ok, Request} = bookish_spork:capture_request(),
-  ?assertEqual('POST', bookish_spork_request:method(Request)),
-  ?assertEqual("/api/1/store/", bookish_spork_request:uri(Request)),
-  ?assertMatch(#{"connection"     := "keep-alive",
-                 "content-length" := _ContentLength,
-                 "content-type"   := "application/octet-stream",
-                 "host"           := "localhost:9090",
-                 "user-agent"     := "eraven/0.1.0",
-                 "x-sentry-auth"  := _XSentryAuth
-                }, bookish_spork_request:headers(Request)),
+  ok = check_api_requirements(Request),
 
   Body = decode(bookish_spork_request:body(Request)),
 
@@ -250,15 +137,7 @@ report_otp_test(_Config) ->
 
 report_otp_report_test(_Config) ->
   {ok, Dsn} = er_dsn:new("http://9f293de25b2c4a74b09ae731ba6aac58@localhost:9090/1"),
-  Config =
-    #{config => #{dsn                  => Dsn,
-                  json_encode_function => fun jsx:encode/1,
-                  event_tags_key       => event_tags,
-                  event_extra_key      => event_extra,
-                  fingerprint_key      => fingerprint
-                 },
-      level  => all
-     },
+  Config = #{config => #{dsn => Dsn}, level  => all},
   logger:add_handler(eraven, er_logger_handler, Config),
 
   logger:error(#{report => #{got => connection_request, id => 42, state => foo},
@@ -266,15 +145,7 @@ report_otp_report_test(_Config) ->
                #{report_cb => fun logger:format_otp_report/1}),
 
   {ok, Request} = bookish_spork:capture_request(),
-  ?assertEqual('POST', bookish_spork_request:method(Request)),
-  ?assertEqual("/api/1/store/", bookish_spork_request:uri(Request)),
-  ?assertMatch(#{"connection"     := "keep-alive",
-                 "content-length" := _ContentLength,
-                 "content-type"   := "application/octet-stream",
-                 "host"           := "localhost:9090",
-                 "user-agent"     := "eraven/0.1.0",
-                 "x-sentry-auth"  := _XSentryAuth
-                }, bookish_spork_request:headers(Request)),
+  ok = check_api_requirements(Request),
 
   Body = decode(bookish_spork_request:body(Request)),
 
@@ -284,15 +155,7 @@ report_otp_report_test(_Config) ->
 
 report_undefined_test(_Config) ->
   {ok, Dsn} = er_dsn:new("http://9f293de25b2c4a74b09ae731ba6aac58@localhost:9090/1"),
-  Config =
-    #{config => #{dsn                  => Dsn,
-                  json_encode_function => fun jsx:encode/1,
-                  event_tags_key       => event_tags,
-                  event_extra_key      => event_extra,
-                  fingerprint_key      => fingerprint
-                 },
-      level  => all
-     },
+  Config = #{config => #{dsn => Dsn}, level  => all},
   logger:add_handler(eraven, er_logger_handler, Config),
 
   logger:error(#{report => #{got => connection_request, id => 42, state => foo},
@@ -300,15 +163,7 @@ report_undefined_test(_Config) ->
                #{report_cb => undefined}),
 
   {ok, Request} = bookish_spork:capture_request(),
-  ?assertEqual('POST', bookish_spork_request:method(Request)),
-  ?assertEqual("/api/1/store/", bookish_spork_request:uri(Request)),
-  ?assertMatch(#{"connection"     := "keep-alive",
-                 "content-length" := _ContentLength,
-                 "content-type"   := "application/octet-stream",
-                 "host"           := "localhost:9090",
-                 "user-agent"     := "eraven/0.1.0",
-                 "x-sentry-auth"  := _XSentryAuth
-                }, bookish_spork_request:headers(Request)),
+  ok = check_api_requirements(Request),
 
   Body = decode(bookish_spork_request:body(Request)),
 
@@ -316,15 +171,7 @@ report_undefined_test(_Config) ->
 
 report_wrong_test(_Config) ->
   {ok, Dsn} = er_dsn:new("http://9f293de25b2c4a74b09ae731ba6aac58@localhost:9090/1"),
-  Config =
-    #{config => #{dsn                  => Dsn,
-                  json_encode_function => fun jsx:encode/1,
-                  event_tags_key       => event_tags,
-                  event_extra_key      => event_extra,
-                  fingerprint_key      => fingerprint
-                 },
-      level  => all
-     },
+  Config = #{config => #{dsn => Dsn}, level  => all},
   logger:add_handler(eraven, er_logger_handler, Config),
 
   logger:error(#{report => #{got => connection_request, id => 42, state => foo},
@@ -332,15 +179,7 @@ report_wrong_test(_Config) ->
                #{report_cb => fun() -> 42 end}),
 
   {ok, Request} = bookish_spork:capture_request(),
-  ?assertEqual('POST', bookish_spork_request:method(Request)),
-  ?assertEqual("/api/1/store/", bookish_spork_request:uri(Request)),
-  ?assertMatch(#{"connection"     := "keep-alive",
-                 "content-length" := _ContentLength,
-                 "content-type"   := "application/octet-stream",
-                 "host"           := "localhost:9090",
-                 "user-agent"     := "eraven/0.1.0",
-                 "x-sentry-auth"  := _XSentryAuth
-                }, bookish_spork_request:headers(Request)),
+  ok = check_api_requirements(Request),
 
   Body = decode(bookish_spork_request:body(Request)),
 
@@ -353,3 +192,15 @@ report_wrong_test(_Config) ->
 decode(CompressedBody) ->
   DecompressedBody = zlib:uncompress(base64:decode(CompressedBody)),
   jsx:decode(DecompressedBody, [return_maps, {labels, atom}]).
+
+check_api_requirements(Request) ->
+  ?assertEqual('POST', bookish_spork_request:method(Request)),
+  ?assertEqual("/api/1/store/", bookish_spork_request:uri(Request)),
+  ?assertMatch(#{"connection"     := "keep-alive",
+                 "content-length" := _ContentLength,
+                 "content-type"   := "application/octet-stream",
+                 "host"           := "localhost:9090",
+                 "user-agent"     := "eraven/0.1.0",
+                 "x-sentry-auth"  := _XSentryAuth
+                }, bookish_spork_request:headers(Request)),
+  ok.
