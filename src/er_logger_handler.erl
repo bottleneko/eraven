@@ -2,11 +2,13 @@
 
 -define(MICROSECONDS_IN_SECONDS, 1000000).
 
-% Logger callbacks
--export([log/2, adding_handler/1, changing_config/3]).
-
 -define(UNDEFINED_FUNCTION_REPLACEMENT, <<"Undefined report function">>).
 -define(WRONG_ARITY_REPLACEMENT, <<"Wrong report function arity">>).
+
+% Logger callbacks
+-export([log/2]).             -ignore_xref([log/2]).
+-export([adding_handler/1]).  -ignore_xref([adding_handler/1]).
+-export([changing_config/3]). -ignore_xref([changing_config/3]).
 
 %%%===================================================================
 %%% Logger callbacks

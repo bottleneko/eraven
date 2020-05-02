@@ -16,6 +16,12 @@ jobs:
     steps:
       - checkout
       - run: rebar3 dialyzer
+  xref:
+    docker:
+      - image: circleci/erlang:22.3.3
+    steps:
+      - checkout
+      - run: rebar3 xref
   elvis:
     docker:
       - image: circleci/erlang:22.3.3
@@ -28,4 +34,5 @@ workflows:
     jobs:
       - test
       - dialyzer
+      - xref
       - elvis

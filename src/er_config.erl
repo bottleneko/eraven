@@ -12,23 +12,11 @@
 
 -export_type([t/0]).
 
--export([new/1, default/0]).
+-export([new/1]).
 
 %%%===================================================================
 %%% API
 %%%===================================================================
-
--spec default() -> t().
-default() ->
-  #{dsn                  => undefined,
-    event_extra_key      => event_extra,
-    event_tags_key       => event_tags,
-    fingerprint_key      => fingerprint,
-    json_encode_function => fun jsx:encode/1,
-    report_depth         => 20,
-    report_chars_limit   => 4096,
-    environment_context  => undefined
-   }.
 
 -spec new(RawConfig) -> {ok, t()} | {error, Reason} when
     RawConfig :: map(),
@@ -44,6 +32,18 @@ new(_RawConfig) ->
 %%%===================================================================
 %%% Internal functions
 %%%===================================================================
+
+-spec default() -> t().
+default() ->
+  #{dsn                  => undefined,
+    event_extra_key      => event_extra,
+    event_tags_key       => event_tags,
+    fingerprint_key      => fingerprint,
+    json_encode_function => fun jsx:encode/1,
+    report_depth         => 20,
+    report_chars_limit   => 4096,
+    environment_context  => undefined
+   }.
 
 -spec parse_dsn(RawConfig) -> {ok, t()} | {error, Reason} when
     RawConfig :: map(),

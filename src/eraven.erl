@@ -1,12 +1,11 @@
 -module(eraven).
 
 % API
--export([set_environment_context/4,
-         set_process_extra/1,
-         set_user_context/1,
-         set_process_tags/1,
-         set_request_context/5
-        ]).
+-export([set_environment_context/4]). -ignore_xref([set_environment_context/4]).
+-export([set_process_extra/1]).       -ignore_xref([set_process_extra/1]).
+-export([set_user_context/1]).        -ignore_xref([set_user_context/1]).
+-export([set_process_tags/1]).        -ignore_xref([set_process_tags/1]).
+-export([set_request_context/5]).     -ignore_xref([set_request_context/5]).
 
 %%====================================================================
 %% API functions

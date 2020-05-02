@@ -21,7 +21,7 @@ Here's example of using eraven in the Erlang shell:
     eraven,
     er_logger_handler,
     #{config => #{
-      dsn => "http://9f293de25b2c4a74b09ae731ba6aac58@localhost:9000/1"
+      dsn    => "http://9f293de25b2c4a74b09ae731ba6aac58@localhost:9000/1"
     }}).
 2> logger:error("Test error", []).
 ```
@@ -143,8 +143,9 @@ Rebar3
 - [x] Writing test for 100% coverage
 - [x] Fix all dialyzer errors
 - [ ] Support Breadcrumbs
-- [ ] Adding [Elvis](https://github.com/inaka/elvis)
-- [ ] Usage in production
+- [x] Adding Xref
+- [x] Adding [Elvis](https://github.com/inaka/elvis)
+- [x] Usage in production
 - [ ] [Unified API](https://docs.sentry.io/development/sdk-dev/unified-api/)
 - [ ] Benchmarks
 - [ ] Usage instructions for Erlang.mk
