@@ -23,8 +23,13 @@
     DsnString :: string(),
     Reason    :: term().
 new(DsnString) when is_list(DsnString) ->
-  case http_uri:parse(DsnString) of
-    {ok, {Scheme, UserInfo, Hostname, Port, Path, _Qs}} ->
+  case uri_string:parse(DsnString) of
+    #{scheme := Scheme, userinfo := UserInfo, host := Hostname, path := Path} = URIMap ->
+      DefaultPort = case Scheme of
+        "http" -> 80;
+        "https" -> 443
+      end,
+      Port = maps:get(port, URIMap, DefaultPort),
       {PublicKey, SecretKey} = parse_keys(UserInfo),
       Dsn =
         #er_dsn{
